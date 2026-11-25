@@ -200,8 +200,9 @@ async function runCartographyUiSuite(ctx) {
     // 350 CE (s_dongjin_350) & 351 CE (s_dongjin_351) must show 冉魏, while 351 CE adds 前秦 in Guanzhong and keeps 前燕 in Liaodong
     assert(
       snapshots.s_dongjin_350.polities.some((p) => p.title === '冉魏') &&
-        !snapshots.s_dongjin_350.polities.some((p) => p.title === '后赵'),
-      's_dongjin_350 (350-351 CE) must replace 后赵 with 冉魏'
+        snapshots.s_dongjin_350.polities.some((p) => p.title === '后赵') &&
+        !snapshots.s_dongjin_350.polities.some((p) => p.title === '前秦'),
+      's_dongjin_350 (350-351 CE) must show 冉魏 in Ye and 后赵 remnants in Guanzhong before 前秦 is founded in 351'
     );
     assert(
       snapshots.s_dongjin_351.polities.some((p) => p.title === '前秦') &&
@@ -343,15 +344,35 @@ async function runCartographyUiSuite(ctx) {
       ['s_nanbei_f', '陈', '北周'],
     ];
 
-    // Seamless 420 CE transition between s_dongjin_f (417-420) and s_nanbei_0 (420-426):
-    // 东晋 and 宋 must have identical shapes, 北魏, 西秦, 胡夏, 北燕, 吐谷浑 match 1-to-1,
+    // 417 -> 420 CE transition between s_dongjin_f (417-420) and s_nanbei_0 (420-427):
+    // 北魏, 西秦, 北燕, 吐谷浑 match 1-to-1; Guanzhong (长安, 潼关, 蒲坂) passed from Jin to 胡夏
+    // after Helian Bobo's Nov 418 capture while 宋 retains 洛阳, 南郑, and 建康;
     // and s_dongjin_f (西凉 + 北凉) merges into unified 北凉 in s_nanbei_0 (420-421 conquest of Western Liang).
-    assert.strictEqual(
-      JSON.stringify(snapshots.s_dongjin_f.polities.find((p) => p.title === '东晋').shape),
-      JSON.stringify(snapshots.s_nanbei_0.polities.find((p) => p.title === '宋').shape),
-      's_dongjin_f (东晋) and s_nanbei_0 (宋) must share identical polygon geometry at 420 CE'
-    );
-    for (const sharedTitle of ['北魏', '西秦', '胡夏', '北燕', '吐谷浑']) {
+    {
+      const jin417 = snapshots.s_dongjin_f.polities.find((p) => p.title === '东晋');
+      const song420 = snapshots.s_nanbei_0.polities.find((p) => p.title === '宋');
+      const xia420 = snapshots.s_nanbei_0.polities.find((p) => p.title === '胡夏');
+      assert(jin417 && song420 && xia420, 's_dongjin_f/东晋 and s_nanbei_0/宋, 胡夏 must exist');
+      assert(
+        pointInShape(108.941, 34.341, jin417.shape) &&
+          pointInShape(110.25, 34.54, jin417.shape) &&
+          pointInShape(112.45, 34.62, jin417.shape) &&
+          pointInShape(118.801, 32.061, jin417.shape),
+        's_dongjin_f (东晋) must hold Chang’an, Tongguan, Luoyang, and Jiankang'
+      );
+      assert(
+        pointInShape(108.941, 34.341, xia420.shape) &&
+          pointInShape(110.25, 34.54, xia420.shape) &&
+          pointInShape(110.32, 34.84, xia420.shape) &&
+          !pointInShape(108.941, 34.341, song420.shape) &&
+          !pointInShape(110.25, 34.54, song420.shape) &&
+          pointInShape(112.45, 34.62, song420.shape) &&
+          pointInShape(107.02, 33.07, song420.shape) &&
+          pointInShape(118.801, 32.061, song420.shape),
+        's_nanbei_0 (420 CE) must transfer Chang’an, Tongguan, and Puban to 胡夏 while 宋 keeps Luoyang, Nanzheng, and Jiankang'
+      );
+    }
+    for (const sharedTitle of ['北魏', '西秦', '北燕', '吐谷浑']) {
       const pDj = snapshots.s_dongjin_f.polities.find((p) => p.title === sharedTitle);
       const pNb = snapshots.s_nanbei_0.polities.find((p) => p.title === sharedTitle);
       assert(pDj && pNb, `Both s_dongjin_f and s_nanbei_0 must include ${sharedTitle} at 420 CE`);
@@ -415,7 +436,7 @@ async function runCartographyUiSuite(ctx) {
       };
       // 1) Dunhuang ([94.66, 40.14]) & Yangguan ([94.13, 39.93]) inside Hexi / regular prefectures (25-880 CE)
       for (const [sk, title] of [
-        ['s_donghan_a', '东汉'],
+        ['s_donghan_a', '隗嚣 · 窦融'],
         ['s_donghan_d1', '马腾'],
         ['s_donghan_f', '曹操'],
         ['s_sanguo', '魏'],
@@ -472,10 +493,11 @@ async function runCartographyUiSuite(ctx) {
         's_xijin_b (311-316 CE): Luoyang must belong to 汉赵 while Chang\'an stays in 晋'
       );
       assert(
-        hasPolAt('s_dongjin_350', '前秦', 108.94, 34.34) &&
+        hasPolAt('s_dongjin_350', '后赵', 108.94, 34.34) &&
           hasPolAt('s_dongjin_350', '冉魏', 114.35, 36.6) &&
-          !hasPolAt('s_dongjin_350', '冉魏', 108.94, 34.34),
-        's_dongjin_350 (350 CE): Chang\'an must belong to 前秦 while Ye belongs to 冉魏'
+          !hasPolAt('s_dongjin_350', '冉魏', 108.94, 34.34) &&
+          hasPolAt('s_dongjin_351', '前秦', 108.94, 34.34),
+        's_dongjin_350/351 (350–351 CE): Chang\'an shifts from 后赵 in 350 to 前秦 in 351 while Ye belongs to 冉魏'
       );
       // 4) Tuyuhun (吐谷浑) present across Eastern Jin, Northern & Southern Dynasties, Sui, and Early Tang (317-634 CE)
       for (const sk of ['s_dongjin_317', 's_dongjin_c', 's_nanbei_0', 's_nanbei_a', 's_nanbei_e', 's_sui_a', 's_sui', 's_sui_d', 's_tang_0']) {
@@ -543,7 +565,7 @@ async function runCartographyUiSuite(ctx) {
       };
       // 1) Eastern Han (25-214 CE): Juyan Oasis ([101.05, 41.95]) & Lingzhou ([106.28, 38.09]) in Han/Liangzhou; Badain Jaran ([102.20, 40.50]) & Yinshan-north ([108.50, 41.80]) in steppe
       for (const [sk, hexiPol, steppePol] of [
-        ['s_donghan_a', '东汉', '匈奴'],
+        ['s_donghan_a', '隗嚣 · 窦融', '匈奴'],
         ['s_donghan_b2', '东汉', '北匈奴'],
         ['s_donghan_c', '东汉', '北匈奴'],
         ['s_donghan', '东汉', '鲜卑'],
@@ -578,7 +600,7 @@ async function runCartographyUiSuite(ctx) {
       for (const [sk, corePol] of [
         ['s_xihan_b3a', '汉'],
         ['s_xihan_b', '汉'],
-        ['s_donghan_a', '东汉'],
+        ['s_donghan_a', '隗嚣 · 窦融'],
         ['s_donghan', '东汉'],
         ['s_sanguo', '魏'],
         ['s_xijin_a', '晋'],
@@ -641,7 +663,7 @@ async function runCartographyUiSuite(ctx) {
         ['s_xihan_c', '汉'],
         ['s_xihan_d', '新（王莽）'],
         ['s_xihan_e', '隗嚣 · 窦融'],
-        ['s_donghan_a', '东汉'],
+        ['s_donghan_a', '隗嚣 · 窦融'],
         ['s_donghan', '东汉'],
         ['s_tang_a5y', '唐'],
         ['s_tang_a5', '唐'],
@@ -1119,8 +1141,8 @@ async function runCartographyUiSuite(ctx) {
       's_qing_a caption must start at 1673 (Revolt of Three Feudatories), not 1661'
     );
     assert(
-      snapshots.s_qing_f0 && snapshots.s_qing_f0.caption.includes('1864 — 1881'),
-      's_qing_f0 caption must cover 1864 — 1881'
+      snapshots.s_qing_f0 && snapshots.s_qing_f0.caption.includes('1864 — 1876'),
+      's_qing_f0 caption must cover 1864 — 1876 (s_qing_1876 covers 1876 — 1881)'
     );
     assert(
       snapshots.s_qing_g0 && snapshots.s_qing_g0.caption.includes('1895 — 1898'),
@@ -1129,7 +1151,7 @@ async function runCartographyUiSuite(ctx) {
 
     // All phase transition milestones derive map-change state from phases
     const expectedMapChangeYears = [
-      1644, 1645, 1661, 1662, 1673, 1681, 1683, 1691, 1720, 1755, 1759, 1796, 1851, 1858, 1860, 1864, 1881, 1895, 1898,
+      1644, 1645, 1661, 1662, 1673, 1681, 1683, 1691, 1720, 1755, 1759, 1796, 1851, 1858, 1860, 1864, 1876, 1881, 1895, 1898,
     ];
     const actualMapChangeYears = (qingD.milestones || [])
       .filter((m) => ctrl._isPhaseChangeYear(qingD, m.year))
@@ -1137,7 +1159,7 @@ async function runCartographyUiSuite(ctx) {
     assert.strictEqual(
       JSON.stringify(actualMapChangeYears),
       JSON.stringify(expectedMapChangeYears),
-      'qing: all 19 phase transition milestones must derive map-change state from phases'
+      'qing: all 20 phase transition milestones must derive map-change state from phases'
     );
 
     assert.strictEqual(ctrl._resolveSnapKey(qingD, 1754), 's_qing_c', 'qing 1754 must resolve to s_qing_c');
@@ -1262,7 +1284,7 @@ async function runCartographyUiSuite(ctx) {
       [{ lng: 112.121, lat: 32.011, year: 229 }, '魏'], // Xiangyang in Three Kingdoms
       [{ lng: 123.171, lat: 41.271, year: 196 }, '公孙氏（辽东）'], // Xiangping (Liaodong)
       [{ lng: 123.171, lat: 41.271, year: 220 }, '公孙氏（辽东）'], // Xiangping 220-228
-      [{ lng: 123.171, lat: 41.271, year: 229 }, '燕（公孙氏辽东）'], // Xiangping 229-237
+      [{ lng: 123.171, lat: 41.271, year: 229 }, '公孙氏（辽东）'], // Xiangping 229-237 (before 237 Yan title)
       [{ lng: 113.261, lat: 23.131, year: 200 }, '士燮'], // Panyu (Jiaozhou) 189-210
       [{ lng: 113.261, lat: 23.131, year: 211 }, '孙权'], // Panyu submits to Sun Quan 211
       [{ lng: 103.82, lat: 36.06, year: 208 }, '马腾 · 韩遂'], // Guanlong before Tong Pass
@@ -1283,7 +1305,7 @@ async function runCartographyUiSuite(ctx) {
     for (const [sk, expTitles, forbidden] of [
       ['s_sanguo_220', ['魏', '刘备', '孙权', '公孙氏（辽东）'], ['蜀汉', '吴']],
       ['s_sanguo_221', ['魏', '蜀汉', '孙权', '公孙氏（辽东）'], ['刘备', '吴']],
-      ['s_sanguo_a', ['魏', '蜀汉', '吴', '燕（公孙氏辽东）'], ['刘备', '孙权']],
+      ['s_sanguo_a', ['魏', '蜀汉', '吴', '公孙氏（辽东）'], ['刘备', '孙权', '燕（公孙氏辽东）']],
     ]) {
       const titles = new Set((snapshots[sk].polities || []).map((p) => p.title));
       for (const t of expTitles) {
@@ -1583,6 +1605,42 @@ async function runCartographyUiSuite(ctx) {
     proto._syncAutoMilestoneBalloon.call(ctrl, tang);
     assert.notStrictEqual(ctrl.milestoneBalloon.innerHTML, 'unchanged', 'A locale switch must rebuild the auto callout');
     Object.assign(ctrl, { locale: 'zh', playing: false, activeMilestone: null });
+    {
+      const idx755 = tang.milestones.findIndex((m) => m.year === 755);
+      const prevM = tang.milestones[idx755 - 1];
+      const nextIdx = tang.milestones.findIndex((m, i) => i > idx755 && tang.milestones[i + 1] && tang.milestones[i + 1].year - m.year > 1);
+      const midM = tang.milestones[nextIdx];
+      const midId = `tang:${nextIdx}`;
+      ctrl.year = midM.year;
+      ctrl.dismissedCalloutIds = new Set();
+      proto._syncAutoMilestoneBalloon.call(ctrl, tang);
+      assert(ctrl.activeMilestone && ctrl.activeMilestone.milestone.year === midM.year, `Expected auto callout on ${midM.year}`);
+      // Closing the callout suppresses reopening while staying on the same milestone (exact or trailing year)
+      ctrl.dismissedCalloutIds.add(midId);
+      proto.closeMilestoneBalloon.call(ctrl);
+      proto._syncAutoMilestoneBalloon.call(ctrl, tang);
+      assert.strictEqual(ctrl.activeMilestone, null, `Dismissed ${midM.year} callout must stay closed on ${midM.year}`);
+      ctrl.year = midM.year + 1;
+      proto._syncAutoMilestoneBalloon.call(ctrl, tang);
+      assert.strictEqual(ctrl.activeMilestone, null, `Dismissed ${midM.year} callout must stay closed on trailing year ${midM.year + 1}`);
+      // Navigating forward to another milestone clears the stale dismissal so returning reopens it
+      ctrl.year = tang.milestones[nextIdx + 1].year;
+      proto._syncAutoMilestoneBalloon.call(ctrl, tang);
+      assert(!ctrl.dismissedCalloutIds.has(midId), 'Navigating forward must prune the previous callout dismissal');
+      ctrl.year = midM.year;
+      proto._syncAutoMilestoneBalloon.call(ctrl, tang);
+      assert(ctrl.activeMilestone && ctrl.activeMilestone.milestone.year === midM.year, `Returning from ahead must reopen ${midM.year} callout`);
+      // Navigating backward and returning also reopens the previously dismissed milestone
+      ctrl.dismissedCalloutIds.add(midId);
+      proto.closeMilestoneBalloon.call(ctrl);
+      ctrl.year = prevM.year;
+      proto._syncAutoMilestoneBalloon.call(ctrl, tang);
+      assert(ctrl.activeMilestone && ctrl.activeMilestone.milestone.year === prevM.year, `Stepping back to ${prevM.year} must open its callout`);
+      ctrl.year = midM.year;
+      proto._syncAutoMilestoneBalloon.call(ctrl, tang);
+      assert(ctrl.activeMilestone && ctrl.activeMilestone.milestone.year === midM.year, `Returning from behind must reopen ${midM.year} callout`);
+      Object.assign(ctrl, { activeMilestone: null, dismissedCalloutIds: new Set() });
+    }
 
     // CUJ 28b: Hiding #chk-milestones switches stepping & autoplay to pure-territory snapshots, locks camera pan, and toggles timeline ticks cleanly
     assert(
@@ -3273,7 +3331,6 @@ async function runCartographyUiSuite(ctx) {
       ['s_nansong_e0', '大蒙古国'],
       ['s_nansong_e', '大蒙古国'],
       ['s_nansong_b', '大蒙古国'],
-      ['s_nansong_f', '元'],
     ]) {
       assert(
         hasPolPt(sk, northPol, 105.721, 34.581) &&
@@ -3291,7 +3348,22 @@ async function runCartographyUiSuite(ctx) {
         `${sk} (post-1142 Treaty of Shaoxing) must place Qinzhou & Dasanguan in ${northPol} / Fengxiang Circuit and Fengzhou, Chengzhou, Jiezhou, Minzhou, & Junzhou in Southern Song / Lizhou Circuit`
       );
     }
-    for (const sk of ['s_nansong_e0', 's_nansong_e', 's_nansong_b', 's_nansong_f']) {
+    // 1259–1275: after Möngke's Sichuan campaign the Mongols hold Chengdu, Hanzhong and Lizhou,
+    // while Southern Song keeps Diaoyu Fortress, Chongqing and Kuizhou.
+    for (const [sk, northPol] of [['s_nansong_1259', '大蒙古国'], ['s_nansong_f', '元']]) {
+      assert(
+        hasPolPt(sk, northPol, 104.071, 30.571) &&
+          hasPolPt(sk, northPol, 107.02, 33.07) &&
+          hasPolPt(sk, northPol, 105.84, 32.44) &&
+          hasPolPt(sk, '南宋', 106.281, 30.031) &&
+          hasPolPt(sk, '南宋', 106.55, 29.56) &&
+          hasPolPt(sk, '南宋', 109.47, 31.02) &&
+          !hasPolPt(sk, '南宋', 104.071, 30.571),
+        `${sk} (1259–1275) must place Chengdu, Hanzhong & Lizhou in ${northPol} and Diaoyu Fortress, Chongqing & Kuizhou in Southern Song`
+      );
+    }
+    assert(hasPolPt('s_nansong_b', '南宋', 104.071, 30.571), 's_nansong_b (1253–1258) must keep Chengdu in Southern Song');
+    for (const sk of ['s_nansong_e0', 's_nansong_e', 's_nansong_b', 's_nansong_1259', 's_nansong_f']) {
       assert(
         snapshots[sk].regions.some((r) => r.title === '辽东路') &&
           snapshots[sk].regions.some((r) => r.title === '燕京路') &&

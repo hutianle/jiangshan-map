@@ -1112,7 +1112,7 @@ async function runSearchRuntimeSuite(ctx) {
           for (const loc of ['zh', 'zh-tw', 'en']) {
             qCtrl.locale = loc;
             qCtrl.startChallenge({ preferCurrentDynasty: true });
-            assert(qCtrl.challenge && qCtrl.challenge.deck.length === 10, `Quiz deck failed for ${loc}`);
+            assert(qCtrl.challenge && qCtrl.challenge.deck.length === 5, `Quiz deck failed for ${loc}`);
             qCtrl._previewLocatePin(500, 350);
             assert(Array.isArray(qCtrl.challenge.pendingGuess), `pendingGuess not set for ${loc}`);
             assert.strictEqual(qCtrl._quizChipAt(50, 20), true, `_quizChipAt hit failed for ${loc}`);
@@ -1120,7 +1120,7 @@ async function runSearchRuntimeSuite(ctx) {
             const [tx, ty] = qCtrl.projector.toScreen(...qCtrl.challenge.deck[0].settlement.coord);
             qCtrl._evaluateLocateClick(tx, ty);
             assert.strictEqual(qCtrl.challenge.answered, true);
-            assert.strictEqual(qCtrl.challenge.lastPts, 100);
+            assert.strictEqual(qCtrl.challenge.lastPts, 20);
             assert.strictEqual(qCtrl.challenge.history.length, 1, `Expected quiz history for ${loc}`);
             qCtrl._finishChallenge();
             assert.strictEqual(qCtrl.challenge.finished, true);
@@ -1130,7 +1130,8 @@ async function runSearchRuntimeSuite(ctx) {
               `#act-share-quiz must be visible after finishing quiz (${loc})`
             );
             const pData = sandbox.window.JiangshanQuizPoster.buildPosterData(qCtrl);
-            assert.strictEqual(pData.total, 100);
+            assert.strictEqual(pData.total, 20);
+            assert.strictEqual(pData.maxTotal, 100);
             assert.strictEqual(pData.items.length, 1);
             assert(pData.best && pData.rankTitle, `Poster metadata missing for ${loc}`);
             assert(
@@ -1147,6 +1148,27 @@ async function runSearchRuntimeSuite(ctx) {
               `#act-share-quiz must hide on stopChallenge (${loc})`
             );
           }
+          // Verify smooth intermediate distance scoring (~140 km -> 17..19 pts; >750 km -> 0 pts)
+          qCtrl.locale = 'zh';
+          qCtrl.startChallenge();
+          const c0 = qCtrl.challenge.deck[0].settlement.coord;
+          const [midX, midY] = qCtrl.projector.toScreen(c0[0], c0[1] + 1.26);
+          qCtrl._evaluateLocateClick(midX, midY);
+          assert(
+            qCtrl.challenge.lastKm >= 120 &&
+              qCtrl.challenge.lastKm <= 160 &&
+              qCtrl.challenge.lastPts >= 17 &&
+              qCtrl.challenge.lastPts <= 19,
+            `Expected smooth intermediate score 17..19 near 140 km, got ${qCtrl.challenge.lastKm} km / ${qCtrl.challenge.lastPts} pts`
+          );
+          qCtrl.challenge.answered = false;
+          const [farX, farY] = qCtrl.projector.toScreen(c0[0] + 10, c0[1] + 6);
+          qCtrl._evaluateLocateClick(farX, farY);
+          assert.strictEqual(
+            qCtrl.challenge.lastPts,
+            0,
+            `Expected distant miss (>750 km) to score 0, got ${qCtrl.challenge.lastKm} km / ${qCtrl.challenge.lastPts} pts`
+          );
           // A round must open on a year in which its place is still on the map
           // (the map hides a settlement once year >= vanish).
           qCtrl.locale = 'zh';
@@ -2676,7 +2698,7 @@ async function runSearchRuntimeSuite(ctx) {
         const qingRuleSet = new Set([
           's_qing_b1', 's_qing_b', 's_qing_c', 's_qing_1755', 's_qing_d',
           's_qing_e', 's_qing_e2', 's_qing_e3', 's_qing_e4',
-          's_qing_f0', 's_qing_f',
+          's_qing_f0', 's_qing_1876', 's_qing_f',
         ]);
         const jpOccSet = new Set([
           's_qing_g0', 's_qing_g',
@@ -2841,7 +2863,9 @@ async function runSearchRuntimeSuite(ctx) {
       [1234, 's_nansong_e0'],
       [1246, 's_nansong_e0'],
       [1247, 's_nansong_e'],
-      [1270, 's_nansong_b'],
+      [1258, 's_nansong_b'],
+      [1259, 's_nansong_1259'],
+      [1270, 's_nansong_1259'],
       [1271, 's_nansong_f'],
       [1275, 's_nansong_f'],
       [1276, 's_nansong_g'],
@@ -3933,18 +3957,23 @@ async function runSearchRuntimeSuite(ctx) {
   {
     assert(
       !indexHtml.includes('github-pill-group') &&
+        !indexHtml.includes('locale-pill-group') &&
+        indexHtml.includes('id="act-locale-menu"') &&
+        indexHtml.includes('id="locale-popover"') &&
+        ['data-locale="zh"', 'data-locale="zh-tw"', 'data-locale="en"'].every((k) => indexHtml.includes(k)) &&
         indexHtml.includes('id="act-github-star"') &&
         indexHtml.includes('id="act-more-menu"') &&
         indexHtml.includes('more-menu-btn') &&
         indexHtml.includes('id="lnk-more-github"') &&
         indexHtml.includes('more-mobile-only') &&
         /<a id="lnk-dynasty-topic"[^>]*>图志<\/a>/.test(indexHtml),
-      'index.html must split #act-github-star and #act-more-menu on desktop, merge #lnk-more-github into #more-popover on mobile, and keep #lnk-dynasty-topic text clean without arrows'
+      'index.html must use compact #act-locale-menu + #locale-popover, split #act-github-star and #act-more-menu on desktop, merge #lnk-more-github into #more-popover on mobile, and keep #lnk-dynasty-topic text clean without arrows'
     );
     assert(
       cssSrc.includes('#viewport-frame.is-camera-moved .canvas-reset-btn') &&
+        cssSrc.includes('.locale-popover') &&
         cssSrc.includes('.more-pop-link.more-mobile-only'),
-      'css/style.css must gate #act-reset-camera visibility via .is-camera-moved and show .more-mobile-only menu items on <= 640px mobile'
+      'css/style.css must gate #act-reset-camera visibility via .is-camera-moved, style .locale-popover, and show .more-mobile-only menu items on <= 640px mobile'
     );
 
     const toggled = new Set();
@@ -4015,6 +4044,66 @@ async function runSearchRuntimeSuite(ctx) {
       toggled.has('is-camera-moved'),
       false,
       'Clearing an active custom route while at default camera must hide #act-reset-camera'
+    );
+
+    const locClasses = new Set(['is-hidden']);
+    const locBtnClasses = new Set();
+    const locAttrs = { 'aria-expanded': 'false' };
+    const makePopItem = (code) => {
+      const cls = new Set(code === 'zh' ? ['is-selected'] : []);
+      const attrs = { 'aria-checked': code === 'zh' ? 'true' : 'false' };
+      return {
+        dataset: { locale: code },
+        classList: {
+          toggle: (c, f) => (f ? cls.add(c) : cls.delete(c)),
+          contains: (c) => cls.has(c),
+        },
+        setAttribute: (k, v) => {
+          attrs[k] = v;
+        },
+        getAttribute: (k) => attrs[k],
+      };
+    };
+    const locItems = ['zh', 'zh-tw', 'en'].map(makePopItem);
+    const locPopoverStub = {
+      classList: {
+        contains: (c) => locClasses.has(c),
+        add: (c) => locClasses.add(c),
+        remove: (c) => locClasses.delete(c),
+      },
+      querySelectorAll: () => locItems,
+    };
+    const locBtnStub = {
+      classList: {
+        contains: (c) => locBtnClasses.has(c),
+        add: (c) => locBtnClasses.add(c),
+        remove: (c) => locBtnClasses.delete(c),
+      },
+      setAttribute: (k, v) => {
+        locAttrs[k] = v;
+      },
+    };
+    const locMap = { 'locale-popover': locPopoverStub, 'act-locale-menu': locBtnStub };
+    const locCtrl = Object.assign(Object.create(proto), {
+      locale: 'en',
+      _id: (id) => locMap[id] || null,
+    });
+    locCtrl._zh = (s) => s;
+    locPopoverStub.classList.remove('is-hidden');
+    locBtnStub.classList.add('is-active');
+    locAttrs['aria-expanded'] = 'true';
+    assert.strictEqual(proto._closeLocalePopover.call(locCtrl), true, '_closeLocalePopover must close an open #locale-popover');
+    assert(locPopoverStub.classList.contains('is-hidden') && !locBtnStub.classList.contains('is-active') && locAttrs['aria-expanded'] === 'false', 'Closing #locale-popover must reset classes and aria-expanded');
+    locPopoverStub.querySelectorAll().forEach((item) => {
+      const active = item.dataset.locale === 'en';
+      item.classList.toggle('is-selected', active);
+      item.setAttribute('aria-checked', active ? 'true' : 'false');
+    });
+    assert(
+      !locItems[0].classList.contains('is-selected') &&
+        locItems[2].classList.contains('is-selected') &&
+        locItems[2].getAttribute('aria-checked') === 'true',
+      'Selecting en in #locale-popover must update is-selected and aria-checked'
     );
   }
 }

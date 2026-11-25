@@ -494,7 +494,6 @@
         if (this.embed) this._initEmbedChrome();
       });
       this._bootInnerWidth = undefined;
-      if (!this.embed) this._maybeShowStartGuide();
 
       if (!this._deferredLoadsHeld) this._releaseDeferredLoads();
     }
@@ -897,12 +896,46 @@
         this.startChallenge(opts);
         return Promise.resolve(true);
       }
-      return this._ensureQuiz().then((ok) => {
-        if (ok && typeof this.startChallenge === 'function') {
-          this.startChallenge(opts);
+      if (this._openingChallenge && this._quizPromise) return this._quizPromise;
+      this._openingChallenge = true;
+      return this._ensureQuiz().then(
+        (ok) => {
+          this._openingChallenge = false;
+          if (ok && !this.challenge && typeof this.startChallenge === 'function') {
+            this.startChallenge(opts);
+          }
+          return ok;
+        },
+        (err) => {
+          this._openingChallenge = false;
+          throw err;
         }
-        return ok;
-      });
+      );
+    }
+
+    _syncChallengeTriggerUi() {
+      const btn = this._id('act-challenge');
+      const full = this._id('lbl-challenge-full');
+      const shortLbl = this._id('lbl-challenge-short');
+      const active = Boolean(this.challenge);
+      const isEn = this.locale === 'en';
+      if (btn) {
+        btn.classList.toggle('is-active', active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        btn.title = active
+          ? isEn
+            ? 'Quiz active · Click to exit'
+            : this._zh('挑战进行中 · 点击退出')
+          : isEn
+            ? 'Map Pinpoint · Ancient Place Quiz'
+            : this._zh('舆图小试 · 古地名定位挑战');
+      }
+      if (full) {
+        full.textContent = isEn ? 'Quiz' : this._zh('舆图小试');
+      }
+      if (shortLbl) {
+        shortLbl.textContent = isEn ? 'Quiz' : this._zh('小试');
+      }
     }
 
     _isNarratorLoaded() {
@@ -991,7 +1024,6 @@
     _syncImmersivePaneState() {
       const immersiveActive = Boolean(this.activePerson || this.challenge);
       if (immersiveActive) {
-        this._dismissStartGuide();
         if (!this.paneCollapsed) {
           this._paneAutoCollapsed = true;
           this.toggleChroniclePane(true);
@@ -1027,86 +1059,6 @@
           if (gg) gg.classList.add('is-dismissed');
         }, 2000);
       }
-    }
-
-    // First-visit guide: three ways in, shown once on a bare homepage visit.
-    // Deep links (?year=, ?person=, topic pages) already carry intent, so skip.
-    _maybeShowStartGuide() {
-      if (typeof location === 'undefined' || !this._id('start-guide')) return;
-      const q = new URLSearchParams(location.search);
-      q.delete('lang');
-      if (Array.from(q.keys()).length) return;
-      try {
-        if (localStorage.getItem('jiangshan_seen_start_guide') === '1') return;
-      } catch (_) {}
-      this._startGuideOpen = true;
-      this._renderStartGuide();
-    }
-
-    _renderStartGuide() {
-      const el = this._id('start-guide');
-      if (!el || !this._startGuideOpen) return;
-      const en = this.locale === 'en';
-      const items = en
-        ? [
-            ['journey', 'Follow Xuanzang west'],
-            ['search', 'Find a place'],
-            ['quiz', 'Map quiz'],
-          ]
-        : [
-            ['journey', '随玄奘西行'],
-            ['search', '寻一处故地'],
-            ['quiz', '古地名小试'],
-          ];
-      const closeLabel = en ? 'Close' : '关闭';
-      el.innerHTML =
-        `<span class="sg-head">${en ? 'New here?' : '初来乍到'}</span>` +
-        items
-          .map(([act, title]) => `<button type="button" class="sg-item" data-act="${act}">${title}</button>`)
-          .join('<span class="sg-sep">·</span>') +
-        `<button type="button" class="sg-close" aria-label="${closeLabel}" title="${closeLabel}">×</button>`;
-      if (this.locale === 'zh-tw') this._applyZhHantDom(el);
-      el.classList.remove('is-hidden');
-      const frame = this._id('viewport-frame');
-      if (frame) frame.classList.add('has-start-guide');
-      el.querySelector('.sg-close').addEventListener('click', () => this._dismissStartGuide());
-      el.querySelectorAll('.sg-item').forEach((btn) => {
-        btn.addEventListener('click', () => this._runStartGuideAction(btn.dataset.act));
-      });
-    }
-
-    _runStartGuideAction(act) {
-      this._dismissStartGuide();
-      if (act === 'journey') {
-        this.openJourneyAsPerson('xuanzang', -1);
-      } else if (act === 'quiz') {
-        this._openChallenge();
-      } else if (act === 'search') {
-        const box = this._id('map-search-box');
-        const inp = this._id('inp-map-search');
-        if (box) box.classList.add('is-expanded');
-        if (inp) {
-          setTimeout(() => {
-            inp.focus();
-            inp.dispatchEvent(new Event('input'));
-          }, 20);
-        }
-      }
-    }
-
-    _dismissStartGuide() {
-      if (!this._startGuideOpen) return;
-      this._startGuideOpen = false;
-      try {
-        localStorage.setItem('jiangshan_seen_start_guide', '1');
-      } catch (_) {}
-      const el = this._id('start-guide');
-      if (el) {
-        el.classList.add('is-hidden');
-        el.innerHTML = '';
-      }
-      const frame = this._id('viewport-frame');
-      if (frame) frame.classList.remove('has-start-guide');
     }
 
     _dismissTraceOnboarding() {
@@ -1229,7 +1181,7 @@
         if (node.nodeType === 1) {
           const tag = node.tagName;
           if (tag === 'SCRIPT' || tag === 'STYLE') return;
-          if (node.classList && node.classList.contains('locale-pill-group')) return;
+          if (node.id === 'locale-popover') return;
           for (const attr of ['title', 'placeholder', 'aria-label']) {
             if (node.hasAttribute && node.hasAttribute(attr)) {
               const curVal = node.getAttribute(attr);
@@ -2125,53 +2077,27 @@
       if (actReset) {
         actReset.title = this.locale === 'en' ? 'Reset camera view' : '复位视图';
       }
-      const lblChal = this._id('lbl-challenge') || this._id('act-challenge');
-      if (lblChal) {
-        lblChal.textContent = this.challenge
-          ? this.locale === 'en'
-            ? 'Quiz Active · Click to Exit'
-            : '挑战进行中 · 点击退出'
-          : this.locale === 'en'
-            ? 'Map Pinpoint · Ancient Place Quiz'
-            : '舆图寻址 · 古地名小试';
+      this._syncChallengeTriggerUi();
+      const locBtn = this._id('act-locale-menu');
+      if (locBtn) {
+        const locTitle =
+          this.locale === 'en'
+            ? 'Switch language'
+            : this._zh('切换语言 / Switch language');
+        locBtn.title = locTitle;
+        if (typeof locBtn.setAttribute === 'function') {
+          locBtn.setAttribute('aria-label', locTitle);
+        }
       }
-      const actLocHant = this._id('act-locale-hant');
-      const lblLocHant = this._id('lbl-locale-hant') || actLocHant;
-      const actLoc = this._id('act-locale');
-      const lblLoc = this._id('lbl-locale') || actLoc;
-      if (this.locale === 'zh') {
-        if (lblLocHant) lblLocHant.textContent = '繁';
-        if (actLocHant) {
-          actLocHant.dataset.targetLocale = 'zh-tw';
-          actLocHant.title = '切換至繁體中文';
-        }
-        if (lblLoc) lblLoc.textContent = 'EN';
-        if (actLoc) {
-          actLoc.dataset.targetLocale = 'en';
-          actLoc.title = 'Switch to English';
-        }
-      } else if (this.locale === 'zh-tw') {
-        if (lblLocHant) lblLocHant.textContent = '简';
-        if (actLocHant) {
-          actLocHant.dataset.targetLocale = 'zh';
-          actLocHant.title = '切换至简体中文';
-        }
-        if (lblLoc) lblLoc.textContent = 'EN';
-        if (actLoc) {
-          actLoc.dataset.targetLocale = 'en';
-          actLoc.title = 'Switch to English';
-        }
-      } else {
-        if (lblLocHant) lblLocHant.textContent = '简';
-        if (actLocHant) {
-          actLocHant.dataset.targetLocale = 'zh';
-          actLocHant.title = '切换至简体中文 / Switch to Simplified Chinese';
-        }
-        if (lblLoc) lblLoc.textContent = '繁';
-        if (actLoc) {
-          actLoc.dataset.targetLocale = 'zh-tw';
-          actLoc.title = '切換至繁體中文 / Switch to Traditional Chinese';
-        }
+      const locPopover = this._id('locale-popover');
+      if (locPopover && typeof locPopover.querySelectorAll === 'function') {
+        locPopover.querySelectorAll('.locale-pop-item').forEach((item) => {
+          const active = item.dataset && item.dataset.locale === this.locale;
+          item.classList.toggle('is-selected', Boolean(active));
+          if (typeof item.setAttribute === 'function') {
+            item.setAttribute('aria-checked', active ? 'true' : 'false');
+          }
+        });
       }
       const ghBtn = this._id('act-github-star');
       if (ghBtn) {
@@ -2217,7 +2143,6 @@
           narratorBtn.setAttribute('aria-label', nTitle);
         }
       }
-      this._renderStartGuide();
       this._id('gesture-guide').textContent = this.uiStr(
         'hint',
         '滚轮缩放 · 拖拽平移 · 点击城名或双击任意处查沿革 · ← → 逐事件跳转（Shift+← → ±10年） · 空格播放'
@@ -2334,7 +2259,6 @@
         ['challenge-card', 'Ancient Place Quiz', '古地名小试挑战'],
         ['genealogy-card', 'Place administrative genealogy', '古今地点沿革卡片'],
         ['journey-card', 'Historical route overlay', '行迹叠图卡片'],
-        ['start-guide', 'Quick start guide', '功能导览'],
       ];
       for (const [id, enLbl, zhLbl] of ariaMap) {
         const el = this._id(id);
@@ -4438,10 +4362,18 @@
       }
       const activeIdx = this._activeMilestoneIndex(dynasty);
       const m = activeIdx >= 0 ? (dynasty.milestones || [])[activeIdx] : null;
+      const calloutId = activeIdx >= 0 ? `${dynasty.key}:${activeIdx}` : null;
+      // Only suppress re-opening while the user remains on the dismissed milestone;
+      // once navigation moves to another milestone, clear stale dismissals so returning re-opens it.
+      if (this.dismissedCalloutIds && this.dismissedCalloutIds.size) {
+        for (const id of [...this.dismissedCalloutIds]) {
+          if (id !== calloutId) this.dismissedCalloutIds.delete(id);
+        }
+      }
       if (
         !m ||
         !m.coord ||
-        (this.dismissedCalloutIds && this.dismissedCalloutIds.has(`${dynasty.key}:${activeIdx}`))
+        (calloutId && this.dismissedCalloutIds && this.dismissedCalloutIds.has(calloutId))
       ) {
         this.closeMilestoneBalloon();
         return;
@@ -6017,8 +5949,8 @@
         ? this.uiStr('title', 'Jiangshan Atlas · Interactive Historical Atlas of China (403 BCE – Present)')
         : '江山时序 · 中国历史地图时间轴（战国至现代历代疆域、州郡政区与古今地名沿革）';
       let pageDesc = isEn
-        ? 'Explore 2,400+ years of Chinese history from the Warring States (403 BCE) to the present across 18 eras, 185 multi-stage territory snapshots, 471 milestones, 571 city landmarks, 20 strategic passes, and 113+ person chronicles.'
-        : '交互式中国历史地图时间轴（公元前403年战国三家分晋至现代）：浏览18个朝代、185幅多阶段历史疆域与州道政区快照、471条编年大事、571处城池地标、20座天下名关与百余位青史人物行迹。';
+        ? 'Explore 2,400+ years of Chinese history from the Warring States (403 BCE) to the present across 18 eras, 200+ multi-stage territory snapshots, 500+ milestones, 700+ city landmarks, 20 strategic passes, and 130+ person chronicles.'
+        : '交互式中国历史地图时间轴（公元前403年战国三家分晋至现代）：浏览18个朝代、200+幅多阶段历史疆域与州道政区快照、500+条编年大事、700+处城池地标、20座天下名关与百余位青史人物行迹。';
       let canonicalUrl = baseSiteUrl;
 
       if (this.activePerson) {
@@ -9675,8 +9607,26 @@
       return true;
     }
 
+    _closeLocalePopover() {
+      const locPopover = this._id('locale-popover');
+      const locBtn = this._id('act-locale-menu');
+      if (
+        !locPopover ||
+        locPopover.classList.contains('is-hidden') ||
+        !locBtn ||
+        !locBtn.classList.contains('is-active')
+      ) {
+        return false;
+      }
+      locPopover.classList.add('is-hidden');
+      locBtn.classList.remove('is-active');
+      locBtn.setAttribute('aria-expanded', 'false');
+      return true;
+    }
+
     // Dismiss the topmost active popover, sheet, or mode one layer at a time.
     _dismissTopOverlay() {
+      if (this._closeLocalePopover && this._closeLocalePopover()) return true;
       if (this._closeMorePopover && this._closeMorePopover()) return true;
       if (this._closeLayersPopover()) return true;
       if (this.playing || this.personTimer) {
@@ -9750,12 +9700,11 @@
           event: this.locale === 'en' ? 'Event' : '史事',
         };
         if (!q) {
-          const index = this._ensureSearchIndex();
+          this._ensureSearchIndex();
           const showcasePool = this._getSearchShowcasePool();
           const sampleItem = showcasePool.length
             ? showcasePool[showcaseIdx % showcasePool.length]
             : null;
-          const quizItem = index.find((item) => item.kind === 'quiz');
           currentResults = sampleItem ? [sampleItem] : [];
           activeSearchIdx = -1;
           searchList.innerHTML = '';
@@ -9838,37 +9787,6 @@
             chipsWrap.appendChild(btn);
           }
           guideLi.appendChild(chipsWrap);
-
-          if (quizItem) {
-            const quizBtn = document.createElement('button');
-            quizBtn.type = 'button';
-            quizBtn.id = 'act-challenge';
-            quizBtn.className = 'sr-quiz-link';
-            const quizText = this.challenge
-              ? this.locale === 'en'
-                ? 'Exit Quiz ×'
-                : '退出小试 ×'
-              : this.locale === 'en'
-                ? 'Quiz ›'
-                : '古地名小试 ›';
-            quizBtn.innerHTML = `<span id="lbl-challenge">${quizText}</span>`;
-            let quizPicked = false;
-            const pickQuiz = (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (quizPicked) return;
-              quizPicked = true;
-              setTimeout(() => {
-                quizPicked = false;
-              }, 250);
-              searchList.classList.add('is-hidden');
-              this._selectSearchResult(quizItem);
-              searchInp.blur();
-            };
-            quizBtn.addEventListener('mousedown', pickQuiz);
-            quizBtn.addEventListener('click', pickQuiz);
-            guideLi.appendChild(quizBtn);
-          }
 
           searchList.appendChild(guideLi);
           searchList.classList.remove('is-hidden');
@@ -10014,6 +9932,25 @@
         });
       }
 
+      const chalBtn = this._id('act-challenge');
+      if (chalBtn) {
+        chalBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this._closeLayersPopover();
+          this._closeMorePopover();
+          this._closeLocalePopover();
+          const sl = this._id('map-search-results');
+          if (sl) sl.classList.add('is-hidden');
+          if (this.challenge) {
+            this.stopChallenge();
+          } else {
+            this.stopAutoplay();
+            this.clearCustomRoute();
+            this._openChallenge();
+          }
+        });
+      }
+
       // Layer popover menu & checkboxes
       const layersBtn = this._id('act-layers-menu');
       const layersPopover = this._id('layers-popover');
@@ -10021,6 +9958,7 @@
         layersBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           this._closeMorePopover();
+          this._closeLocalePopover();
           const willOpen = layersPopover.classList.contains('is-hidden');
           if (willOpen) {
             if (window.innerWidth > 640) {
@@ -10054,12 +9992,64 @@
         });
       }
 
+      const localeBtn = this._id('act-locale-menu');
+      const localePopover = this._id('locale-popover');
+      if (localeBtn && localePopover) {
+        localeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this._closeLayersPopover();
+          this._closeMorePopover();
+          const willOpen = localePopover.classList.contains('is-hidden');
+          if (willOpen) {
+            const navEl = this._id('nav-bar');
+            if (
+              typeof localeBtn.getBoundingClientRect === 'function' &&
+              navEl &&
+              typeof navEl.getBoundingClientRect === 'function'
+            ) {
+              const btnRect = localeBtn.getBoundingClientRect();
+              const navRect = navEl.getBoundingClientRect();
+              const rightPx = Math.max(8, Math.round(navRect.right - btnRect.right));
+              localePopover.style.right = `${rightPx}px`;
+            }
+            localePopover.classList.remove('is-hidden');
+            localeBtn.classList.add('is-active');
+            localeBtn.setAttribute('aria-expanded', 'true');
+          } else {
+            this._closeLocalePopover();
+          }
+        });
+        localePopover.querySelectorAll('.locale-pop-item').forEach((item) => {
+          item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const target = item.dataset && item.dataset.locale;
+            if (target && target !== this.locale) {
+              this.locale = target;
+              this._saveStoredLocale(this.locale);
+              this._syncUrlLangParam();
+              this.applyLocale();
+            }
+            this._closeLocalePopover();
+          });
+        });
+        document.addEventListener('pointerdown', (e) => {
+          if (
+            !localePopover.classList.contains('is-hidden') &&
+            !localePopover.contains(e.target) &&
+            !localeBtn.contains(e.target)
+          ) {
+            this._closeLocalePopover();
+          }
+        });
+      }
+
       const moreBtn = this._id('act-more-menu');
       const morePopover = this._id('more-popover');
       if (moreBtn && morePopover) {
         moreBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           this._closeLayersPopover();
+          this._closeLocalePopover();
           const willOpen = morePopover.classList.contains('is-hidden');
           if (willOpen) {
             morePopover.classList.remove('is-hidden');
@@ -10251,25 +10241,6 @@
       if (musicNextBtn) {
         musicNextBtn.addEventListener('click', () => this.nextMusicTrack());
       }
-
-      const actLocHant = this._id('act-locale-hant');
-      if (actLocHant) {
-        actLocHant.addEventListener('click', () => {
-          const target = actLocHant.dataset.targetLocale;
-          this.locale = target || (this.locale === 'zh' ? 'zh-tw' : 'zh');
-          this._saveStoredLocale(this.locale);
-          this._syncUrlLangParam();
-          this.applyLocale();
-        });
-      }
-      this._id('act-locale').addEventListener('click', () => {
-        const btn = this._id('act-locale');
-        const target = btn && btn.dataset && btn.dataset.targetLocale;
-        this.locale = target || (this.locale === 'en' ? 'zh' : 'en');
-        this._saveStoredLocale(this.locale);
-        this._syncUrlLangParam();
-        this.applyLocale();
-      });
 
       this._id('act-autoplay').addEventListener('click', () => {
         if (this.challenge) return;

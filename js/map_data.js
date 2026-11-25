@@ -415,7 +415,8 @@ window.DYNASTY_DATA = [
       {"until":123,"snap":"s_donghan_107"},
       {"until":189,"snap":"s_donghan_123"},
       {"until":196,"snap":"s_donghan_d1"},
-      {"until":200,"snap":"s_donghan_d2"},
+      {"until":198,"snap":"s_donghan_d2"},
+      {"until":200,"snap":"s_donghan_198"},
       {"until":208,"snap":"s_donghan_d"},
       {"until":211,"snap":"s_donghan_e0"},
       {"until":214,"snap":"s_donghan_e1"},
@@ -624,8 +625,8 @@ window.DYNASTY_DATA = [
       {"year":410,"headline":"刘裕北伐攻破广固，灭南燕","site":"广固（青州）","coord":[118.471,36.701]},
       {"year":413,"headline":"刘裕遣朱龄石西征平定谯蜀，收复巴蜀","site":"成都","coord":[104.071,30.571]},
       {"year":414,"headline":"西秦乞伏炽磐袭破乐都灭南凉；北凉沮渠蒙逊迁都姑臧称河西王","site":"乐都 · 姑臧","coord":[102.4,36.48],"siteCoords":[[102.4,36.48],[102.641,37.931]]},
-      {"year":417,"headline":"刘裕北伐灭后秦，收复洛阳、长安","site":"长安","coord":[108.941,34.341]},
-      {"year":420,"headline":"晋恭帝禅位于刘裕，东晋亡，宋齐梁陈南朝开启","site":"建康","coord":[118.801,32.061]}
+      {"year":417,"headline":"刘裕北伐却月阵破魏，克洛阳长安灭后秦；次年关中失于胡夏","site":"长安","coord":[108.941,34.341]},
+      {"year":420,"headline":"刘裕弑晋安帝、迫晋恭帝禅位建宋，次年弑废帝，南朝开启","site":"建康","coord":[118.801,32.061]}
     ],
     "settlements": [
       {"ancient":"建康","modern":"南京","coord":[118.801,32.061],"isCapital":true,"align":"b","remark":"东晋都城（317–420）"},
@@ -1361,12 +1362,12 @@ window.DYNASTY_DATA = [
       {"ancient":"润州","modern":"镇江","coord":[119.451,32.201],"tier":2,"remark":"两浙路重镇（政和三年升镇江府），王安石瓜洲渡江赋诗与沈括梦溪园所在地"}
     ],
     "phases": [
-      {"until":963,"snap":"s_beisong_a0","overview":"960 — 963 · 陈桥兵变立宋与杯酒释兵权：十国割据尚存，北宋先取荆湖"},
-      {"until":965,"snap":"s_beisong_a","overview":"963 — 965 · 假道灭虢平荆湖：荆南、武平入宋，继发兵伐后蜀"},
-      {"until":971,"snap":"s_beisong_a2","overview":"965 — 971 · 王全斌灭后蜀与潘美平南汉：巴蜀、岭南次第归宋"},
-      {"until":975,"snap":"s_beisong_a3","overview":"971 — 975 · 曹彬浮桥渡江攻灭南唐：江南、江西、闽北入宋"},
-      {"until":978,"snap":"s_beisong_a4","overview":"975 — 978 · 泉漳清源军陈洪进与吴越王钱俶纳土归宋前夕"},
-      {"until":979,"snap":"s_beisong_a5","overview":"978 — 979 · 吴越与清源军纳土、太宗灭北汉：中原江南复归统一"},
+      {"until":963,"snap":"s_beisong_a0","overview":"960 — 963 · 陈桥兵变立宋与杯酒释兵权：十国与北汉割据尚存"},
+      {"until":965,"snap":"s_beisong_a","overview":"963 — 965 · 假道灭虢平荆湖：荆南、武平并入北宋"},
+      {"until":971,"snap":"s_beisong_a2","overview":"965 — 971 · 王全斌平蜀：后蜀灭亡，巴蜀并入北宋"},
+      {"until":975,"snap":"s_beisong_a3","overview":"971 — 975 · 潘美平定南汉：两广岭南并入北宋"},
+      {"until":978,"snap":"s_beisong_a4","overview":"975 — 978 · 曹彬攻克金陵灭南唐：江南、江西、闽北入宋"},
+      {"until":979,"snap":"s_beisong_a5","overview":"978 — 979 · 钱俶与陈洪进纳土归宋：江南一统，唯余河东北汉"},
       {"until":1038,"snap":"s_beisong_b0","overview":"979 — 1038 · 高梁河与雍熙北伐、1002 李继迁陷灵州与 1004 澶渊之盟"},
       {"until":1072,"snap":"s_beisong_b","overview":"1038 — 1072 · 元昊建西夏、宋夏三川口与好水川之战及庆历和议：宋辽夏三足鼎立"},
       {"until":1104,"snap":"s_beisong_b1","overview":"1072 — 1104 · 王安石变法与王韶熙河开边：收复熙河洮岷兰，新置熙河路"},
@@ -1499,7 +1500,8 @@ window.DYNASTY_DATA = [
       {"until":1234,"snap":"s_nansong_d","overview":"1227 — 1234 · 蒙古灭西夏、三峰山之战与宋蒙联军蔡州灭金：金亡于蔡州"},
       {"until":1247,"snap":"s_nansong_e0","overview":"1234 — 1247 · 端平入洛、1235 宋蒙全面战争爆发，吐蕃诸部尚未归附"},
       {"until":1253,"snap":"s_nansong_e","overview":"1247 — 1253 · 凉州会盟吐蕃正式归附大蒙古国，宋蒙川陕荆襄拉锯"},
-      {"until":1271,"snap":"s_nansong_b","overview":"1253 — 1271 · 忽必烈灭大理、1259 钓鱼城蒙哥战死与 1264 设总制院"},
+      {"until":1259,"snap":"s_nansong_b","overview":"1253 — 1259 · 忽必烈灭大理与蒙哥汗三路攻宋"},
+      {"until":1271,"snap":"s_nansong_1259","overview":"1259 — 1271 · 1259 钓鱼城蒙哥战死、蒙古据川西北与 1264 设总制院"},
       {"until":1276,"snap":"s_nansong_f","overview":"1271 — 1276 · 忽必烈建国号大元、1273 襄阳陷落与伯颜渡江逼近临安"},
       {"until":1279,"snap":"s_nansong_g","overview":"1276 — 1279 · 文天祥陆秀夫张世杰拥二王闽粤抗元与 1279 崖山海战南宋覆亡"}
     ]
@@ -2032,7 +2034,8 @@ window.DYNASTY_DATA = [
       {"until":1858,"snap":"s_qing_e2"},
       {"until":1860,"snap":"s_qing_e3"},
       {"until":1864,"snap":"s_qing_e4"},
-      {"until":1881,"snap":"s_qing_f0"},
+      {"until":1876,"snap":"s_qing_f0"},
+      {"until":1881,"snap":"s_qing_1876"},
       {"until":1895,"snap":"s_qing_f"},
       {"until":1898,"snap":"s_qing_g0"},
       {"until":1912,"snap":"s_qing_g"}
