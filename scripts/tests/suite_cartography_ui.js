@@ -291,6 +291,24 @@ async function runCartographyUiSuite(ctx) {
         xijinSnap.polities.some((p) => p.title === '汉赵'),
       's_xijin must include both 晋 and 汉赵 polities'
     );
+    // Western Jin & Han-Zhao Jin-Shaan frontier must align with the Yellow River channel (not bulge west into Shaanxi)
+    for (const [sk, shanxiPol] of [
+      ['s_xijin_a', '晋'],
+      ['s_xijin', '汉赵'],
+      ['s_xijin_a2', '汉赵'],
+      ['s_xijin_b', '汉赵'],
+    ]) {
+      const shanxiShape = (snapshots[sk].polities || []).find((p) => p.title === shanxiPol)?.shape;
+      const jinShape = (snapshots[sk].polities || []).find((p) => p.title === '晋')?.shape;
+      assert(shanxiShape, `${sk}: missing ${shanxiPol}`);
+      assert(
+        pointInShape(111.14, 37.52, shanxiShape) &&
+          !pointInShape(110.30, 36.40, shanxiShape) &&
+          !pointInShape(110.45, 37.60, shanxiShape) &&
+          (!jinShape || (!pointInShape(110.30, 36.40, jinShape) && !pointInShape(110.45, 37.60, jinShape))),
+        `${sk}: 左国城 ([111.14, 37.52]) must stay inside ${shanxiPol} while Shaanxi west of the Yellow River ([110.30, 36.40], [110.45, 37.60]) stays outside 晋 and 汉赵`
+      );
+    }
 
     // Capital periods verification for xijin and dongjin
     const xjDyn = dynasties.find((d) => d.key === 'xijin');
@@ -1343,20 +1361,49 @@ async function runCartographyUiSuite(ctx) {
     const wdDynCap = dynasties.find((d) => d.key === 'wudai');
     const nsDynCap = dynasties.find((d) => d.key === 'nansong');
     const zgXianyang = zgDynCap.settlements.find((s) => s.ancient === '咸阳');
+    const zgYongcheng = zgDynCap.settlements.find((s) => s.ancient === '雍城');
+    const zgYueyang = zgDynCap.settlements.find((s) => s.ancient === '栎阳');
+    const zgAnyi = zgDynCap.settlements.find((s) => s.ancient === '安邑');
+    const zgJinyang = zgDynCap.settlements.find((s) => s.ancient === '晋阳');
+    const zgHandan = zgDynCap.settlements.find((s) => s.ancient === '邯郸');
+    const zgYangzhai = zgDynCap.settlements.find((s) => s.ancient === '阳翟');
     const zgDaliang = zgDynCap.settlements.find((s) => s.ancient === '大梁');
     const zgXinzheng = zgDynCap.settlements.find((s) => s.ancient === '新郑');
     const zgChenying = zgDynCap.settlements.find((s) => s.ancient === '陈郢');
+    const zgLangya = zgDynCap.settlements.find((s) => s.ancient === '琅琊');
+    const zgWu = zgDynCap.settlements.find((s) => s.ancient === '吴');
     const qinXianyang = qinDynCap.settlements.find((s) => s.ancient === '咸阳');
     const wdKaifeng = wdDynCap.settlements.find((s) => s.ancient === '东京开封府');
     const wdLuoyang = wdDynCap.settlements.find((s) => s.ancient === '洛阳');
     const nsLinan = nsDynCap.settlements.find((s) => s.ancient === '临安');
     assert(
-      !ctrl._isSettlementCapital(zgXianyang, -380) &&
+      zgXianyang.appear === -350 &&
+        !ctrl._isSettlementCapital(zgXianyang, -380) &&
         ctrl._isSettlementCapital(zgXianyang, -330) &&
+        ctrl._isSettlementCapital(zgYongcheng, -403) &&
+        !ctrl._isSettlementCapital(zgYongcheng, -380) &&
+        !ctrl._isSettlementCapital(zgYueyang, -403) &&
+        ctrl._isSettlementCapital(zgYueyang, -360) &&
+        !ctrl._isSettlementCapital(zgYueyang, -340) &&
+        ctrl._isSettlementCapital(zgAnyi, -403) &&
+        !ctrl._isSettlementCapital(zgAnyi, -350) &&
+        ctrl._isSettlementCapital(zgYangzhai, -403) &&
+        !ctrl._isSettlementCapital(zgYangzhai, -350) &&
+        ctrl._isSettlementCapital(zgJinyang, -403) &&
+        !ctrl._isSettlementCapital(zgJinyang, -380) &&
+        !ctrl._isSettlementCapital(zgHandan, -403) &&
+        ctrl._isSettlementCapital(zgHandan, -350) &&
+        ctrl._isSettlementCapital(zgLangya, -403) &&
+        !ctrl._isSettlementCapital(zgLangya, -370) &&
+        !ctrl._isSettlementCapital(zgWu, -403) &&
+        ctrl._isSettlementCapital(zgWu, -350) &&
+        !ctrl._isSettlementCapital(zgWu, -300) &&
         !ctrl._isSettlementCapital(zgDaliang, -380) &&
         ctrl._isSettlementCapital(zgDaliang, -350) &&
         !ctrl._isSettlementCapital(zgXinzheng, -380) &&
         ctrl._isSettlementCapital(zgXinzheng, -350) &&
+        ctrl._settlementAncient(zgChenying, -403) === '陈' &&
+        ctrl._settlementAncient(zgChenying, -260) === '陈郢' &&
         !ctrl._isSettlementCapital(zgChenying, -300) &&
         ctrl._isSettlementCapital(zgChenying, -260) &&
         !ctrl._isSettlementCapital(zgChenying, -230) &&
@@ -3091,6 +3138,9 @@ async function runCartographyUiSuite(ctx) {
     // Neighbour names must fit the snapshot's years.
     for (const [sk, has, lacks] of [
       ['s_zhanguo_a', '波斯（阿契美尼德）', '安息'],
+      ['s_zhanguo_a', '波斯（阿契美尼德）', '塞琉古（条支）'],
+      ['s_zhanguo_a', '波斯（阿契美尼德）', '孔雀帝国'],
+      ['s_zhanguo_a', '波斯（阿契美尼德）', '大夏（巴克特里亚）'],
       ['s_sanguo', '萨珊波斯', '安息'],
       ['s_nanbei_e', '突厥', '柔然'],
       ['s_tang_a5', '倭马亚王朝（大食）', '萨珊波斯'],
@@ -3542,14 +3592,16 @@ async function runCartographyUiSuite(ctx) {
     for (const sk of ['s_zhanguo_b1', 's_zhanguo_b', 's_zhanguo_b2', 's_zhanguo_c', 's_zhanguo_c2', 's_zhanguo_d', 's_zhanguo_e1', 's_zhanguo_e2', 's_zhanguo_e3', 's_zhanguo_e4']) {
       assert(hasPolPt(sk, '楚', 119.98, 35.65), `${sk} must include Langya ([119.98, 35.65]) inside 楚`);
     }
-    assert(hasPolPt('s_zhanguo_e5', '秦', 119.98, 35.65), 's_zhanguo_e5 must include Langya ([119.98, 35.65]) inside 秦');
+    for (const sk of ['s_zhanguo_e5', 's_zhanguo_e6']) {
+      assert(hasPolPt(sk, '秦', 119.98, 35.65), `${sk} must include Langya ([119.98, 35.65]) inside 秦`);
+    }
     for (const sk of ['s_zhanguo_b', 's_zhanguo_b2', 's_zhanguo_c', 's_zhanguo_c2', 's_zhanguo_d', 's_zhanguo_e1']) {
       assert(
         hasPolPt(sk, '赵', 111.201, 40.251) && hasPolPt(sk, '赵', 114.551, 40.151),
         `${sk} (-300..-229 BCE) must include both Yunzhong and Dai inside 赵`
       );
     }
-    for (const sk of ['s_zhanguo_e2', 's_zhanguo_e3', 's_zhanguo_e4']) {
+    for (const sk of ['s_zhanguo_e2', 's_zhanguo_e3', 's_zhanguo_e4', 's_zhanguo_e5']) {
       assert(
         hasPolPt(sk, '秦', 111.201, 40.251) &&
           hasPolPt(sk, '代', 114.551, 40.151) &&
@@ -3557,6 +3609,20 @@ async function runCartographyUiSuite(ctx) {
         `${sk} (-228..-223 BCE) must place Yunzhong in 秦 and Dai ([114.551, 40.151]) in 代`
       );
     }
+    assert(
+      hasPolPt('s_zhanguo_e5', '秦', 116.78, 32.58) &&
+        hasPolPt('s_zhanguo_e5', '燕', 123.17, 41.27) &&
+        hasPolPt('s_zhanguo_e5', '代', 114.551, 40.151) &&
+        !snapshots.s_zhanguo_e5.polities.some((p) => p.title === '楚'),
+      's_zhanguo_e5 (-223 BCE fall of Chu) must annex Chu into 秦 while keeping 燕 and 代 intact'
+    );
+    assert(
+      hasPolPt('s_zhanguo_e6', '秦', 116.78, 32.58) &&
+        hasPolPt('s_zhanguo_e6', '秦', 114.551, 40.151) &&
+        hasPolPt('s_zhanguo_e6', '秦', 123.17, 41.27) &&
+        !snapshots.s_zhanguo_e6.polities.some((p) => ['楚', '代', '燕'].includes(p.title)),
+      's_zhanguo_e6 (-222 BCE fall of Yan & Dai) must absorb 燕 and 代 into 秦'
+    );
     for (const sk of ['s_qin_a', 's_qin_b', 's_qin', 's_xihan_a', 's_xihan_a2', 's_xihan_b1', 's_xihan_b2', 's_xihan_b3a', 's_xihan_b3b', 's_xihan_b3', 's_xihan_b', 's_xihan_c', 's_xihan_d']) {
       const mainPol = snapshots[sk].polities[0];
       const mainRing = mainPol.shape.type === 'Polygon' ? mainPol.shape.coordinates[0] : mainPol.shape.coordinates[0][0];

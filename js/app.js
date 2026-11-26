@@ -984,6 +984,7 @@
         ).then(() => {
           this._loreDetailLoaded = true;
           this.searchIndex = null;
+          this._showcasePoolCache = null;
           this._soloPersonEventsCache = null;
           this._extraEnTermMap = null;
           this._challengeBaseTiers = null;
@@ -2209,18 +2210,20 @@
         chalKicker.textContent = this.locale === 'en' ? 'Map Pinpoint' : '舆图寻址';
       }
       const searchInp = this._id('inp-map-search');
+      const searchBox = this._id('map-search-box');
       if (searchInp) {
         const isExpanded =
-          typeof document !== 'undefined' && document.activeElement === searchInp;
+          (typeof document !== 'undefined' && document.activeElement === searchInp) ||
+          Boolean(searchBox && searchBox.classList.contains('is-expanded'));
         const searchPh = this._searchPlaceholder(isExpanded);
         const searchAria =
           this.locale === 'en'
-            ? 'Search historical figures (single or pair, e.g. Li Bai, Du Fu), ancient/modern cities, prefectures, or eras'
-            : this._zh('搜历史人物（支持双人同框如：李白 杜甫）、古今地名、州府或帝王年号');
+            ? 'Search historical figures (single or pair, e.g. Li Bai, Du Fu), ancient/modern cities, event storylines, prefectures, or eras'
+            : this._zh('搜历史人物（支持双人同框如：李白 杜甫）、古今地名、历史事件始末、州府或帝王年号');
         searchInp.placeholder = searchPh;
         searchInp.setAttribute('aria-label', searchAria);
       }
-      const searchBox = this._id('map-search-box');
+      if (this._syncSearchClearBtn) this._syncSearchClearBtn();
       if (searchBox) {
         searchBox.setAttribute(
           'aria-label',
@@ -2347,6 +2350,7 @@
         } else {
           this.presentChallengeRound();
         }
+        if (typeof this._syncChallengeMobileDock === 'function') this._syncChallengeMobileDock();
       }
       this._applyZhHantDom();
     }
@@ -3979,8 +3983,11 @@
             },
             group
           );
-          this._svgNode('circle', { class: 'ev-hit', r: 7 }, pin);
-          this._svgNode('circle', { class: 'ev-ring', r: 7 }, pin);
+          this._svgNode('circle', { class: 'ev-hit', r: 10 }, pin);
+          this._svgNode('circle', { class: 'ev-halo-bg', r: 7.4 }, pin);
+          this._svgNode('circle', { class: 'ev-halo', r: 7.4 }, pin);
+          this._svgNode('circle', { class: 'ev-ring', r: 7.8 }, pin);
+          this._svgNode('circle', { class: 'ev-ring ev-ring-2', r: 7.8 }, pin);
           this._svgNode('polygon', { class: 'ev-core', points: '0,-3.9 3.9,0 0,3.9 -3.9,0' }, pin);
         });
       });
@@ -4567,6 +4574,51 @@
       const yrText = this.formatYear(m.year);
       const eraLabel = this._eventEraLabel(dynasty, m);
       const headlineText = this.milestoneHeadline(dynasty, m);
+      const pillsData = this._buildMilestonePillsData(dynasty, m, anchors);
+      const { placeHtml, relicStopIdx, relicHtml, storyHit, storyHtml, placeEstText, relicLabel, storyLabel } =
+        pillsData;
+      const closeTitle = this.locale === 'en' ? 'Dismiss event callout' : '关闭此事件浮签';
+      this.milestoneBalloon.innerHTML =
+        `<div class="ep-head"><span class="ep-year">${yrText} · ${eraLabel}</span>${placeHtml}${relicHtml}${storyHtml}<button type="button" class="ep-close" title="${closeTitle}" aria-label="${closeTitle}">×</button></div>` +
+        `<div class="ep-text">${headlineText}</div>`;
+      const isMobile = typeof window !== 'undefined' && window.innerWidth <= 900;
+      const isMultiAnchor = anchors.length >= 2;
+      const maxW = isMobile ? Math.min(268, (window.innerWidth || 390) - 20) : 348;
+      const headW =
+        this._estimateLocalTextWidth(
+          `${yrText} · ${eraLabel}${placeEstText ? ` ${placeEstText}` : ''}${relicStopIdx !== null ? ` 玺 ${relicLabel}` : ''}${storyHit ? ` 事 ${storyLabel}` : ''}`,
+          11.5,
+          0
+        ) + (isMultiAnchor ? 40 + anchors.length * 22 : 52);
+      const textW = this._estimateLocalTextWidth(headlineText, isMobile ? 11.5 : 12.2, 0);
+      const estW = Math.round(
+        Math.max(isMobile ? 190 : 220, Math.min(maxW, Math.max(headW, textW + 24)))
+      );
+      const headLines = Math.max(1, Math.ceil(headW / Math.max(120, estW - 28)));
+      const textLines = Math.max(1, Math.ceil(textW / Math.max(120, estW - 22)));
+      const estH = Math.round(16 + headLines * (isMobile ? 22 : 20) + textLines * 17.5);
+      this._milestoneBalloonSize = { w: estW, h: estH };
+      this._bindMilestonePills(this.milestoneBalloon, dynasty, m, anchors, relicStopIdx, storyHit);
+      const closeBtn = this.milestoneBalloon.querySelector('.ep-close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (this.dismissedCalloutIds && mIdx >= 0) {
+            this.dismissedCalloutIds.add(`${dynasty.key}:${mIdx}`);
+          }
+          this.closeMilestoneBalloon();
+        });
+      }
+      this.milestoneBalloon.classList.remove('is-hidden', 'is-offscreen');
+      if (this.locale === 'zh-tw') this._applyZhHantDom(this.milestoneBalloon);
+      this._syncMobileChroniclePeek(dynasty, m, { anchors, pillsData, headlineText });
+      this._measureMilestoneBalloonSize(estW, estH);
+      const vf = this._id('viewport-frame');
+      if (vf) vf.classList.add('has-open-milestone-balloon');
+      this._positionMilestoneBalloon();
+    }
+
+    _buildMilestonePillsData(dynasty, m, anchors) {
       const traceTitle =
         this.locale === 'en' ? 'Click to trace place history' : '点击查看此地历代沿革（点地溯源）';
       const isMultiAnchor = anchors.length >= 2;
@@ -4605,30 +4657,25 @@
       const storyHtml = storyHit
         ? `<button type="button" class="ep-relic-seal ep-story-seal" title="${storyTitle}"><span class="seal-stamp">事</span><span>${storyLabel}</span></button>`
         : '';
-      const closeTitle = this.locale === 'en' ? 'Dismiss event callout' : '关闭此事件浮签';
-      this.milestoneBalloon.innerHTML =
-        `<div class="ep-head"><span class="ep-year">${yrText} · ${eraLabel}</span>${placeHtml}${relicHtml}${storyHtml}<button type="button" class="ep-close" title="${closeTitle}" aria-label="${closeTitle}">×</button></div>` +
-        `<div class="ep-text">${headlineText}</div>`;
-      const isMobile = typeof window !== 'undefined' && window.innerWidth <= 900;
-      const maxW = isMobile ? Math.min(268, (window.innerWidth || 390) - 20) : 348;
-      const headW =
-        this._estimateLocalTextWidth(
-          `${yrText} · ${eraLabel}${placeEstText ? ` ${placeEstText}` : ''}${relicStopIdx !== null ? ` 玺 ${relicLabel}` : ''}${storyHit ? ` 事 ${storyLabel}` : ''}`,
-          11.5,
-          0
-        ) + (isMultiAnchor ? 40 + anchors.length * 22 : 52);
-      const textW = this._estimateLocalTextWidth(headlineText, isMobile ? 11.5 : 12.2, 0);
-      const estW = Math.round(
-        Math.max(isMobile ? 190 : 220, Math.min(maxW, Math.max(headW, textW + 24)))
-      );
-      const headLines = Math.max(1, Math.ceil(headW / Math.max(120, estW - 28)));
-      const textLines = Math.max(1, Math.ceil(textW / Math.max(120, estW - 22)));
-      const estH = Math.round(16 + headLines * (isMobile ? 22 : 20) + textLines * 17.5);
-      this._milestoneBalloonSize = { w: estW, h: estH };
+      return {
+        pillsInner,
+        placeHtml,
+        relicStopIdx,
+        relicHtml,
+        storyHit,
+        storyHtml,
+        placeEstText,
+        relicLabel,
+        storyLabel,
+      };
+    }
+
+    _bindMilestonePills(container, dynasty, m, anchors, relicStopIdx, storyHit) {
+      if (!container) return;
       const placeBtns =
-        typeof this.milestoneBalloon.querySelectorAll === 'function'
-          ? Array.from(this.milestoneBalloon.querySelectorAll('.ep-place'))
-          : [this.milestoneBalloon.querySelector('.ep-place')].filter(Boolean);
+        typeof container.querySelectorAll === 'function'
+          ? Array.from(container.querySelectorAll('.ep-place'))
+          : [container.querySelector('.ep-place')].filter(Boolean);
       placeBtns.forEach((btn) => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -4650,36 +4697,62 @@
           this._panToward(targetCoord[0], targetCoord[1]);
         });
       });
-      const relicBtn = this.milestoneBalloon.querySelector('.ep-relic-seal:not(.ep-story-seal)');
+      const relicBtn =
+        typeof container.querySelector === 'function'
+          ? container.querySelector('.ep-relic-seal:not(.ep-story-seal)')
+          : null;
       if (relicBtn && relicStopIdx !== null) {
         relicBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           this.openPersonChronicle('yuxi', relicStopIdx);
         });
       }
-      const storyBtn = this.milestoneBalloon.querySelector('.ep-story-seal');
+      const storyBtn =
+        typeof container.querySelector === 'function'
+          ? container.querySelector('.ep-story-seal')
+          : null;
       if (storyBtn && storyHit) {
         storyBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           this.openPersonChronicle(storyHit.key, storyHit.stopIdx);
         });
       }
-      const closeBtn = this.milestoneBalloon.querySelector('.ep-close');
-      if (closeBtn) {
-        closeBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (this.dismissedCalloutIds && mIdx >= 0) {
-            this.dismissedCalloutIds.add(`${dynasty.key}:${mIdx}`);
-          }
-          this.closeMilestoneBalloon();
-        });
+    }
+
+    _syncMobileChroniclePeek(dynasty, m, prebuilt = null) {
+      const pane = this._id('chronicle-pane');
+      const pillsEl = this._id('mobile-peek-pills');
+      const textEl = this._id('mobile-peek-text');
+      if (!pane || !pillsEl || !textEl || !pane.classList) return;
+      const milestonesHidden =
+        this.grpMilestones &&
+        this.grpMilestones.classList &&
+        this.grpMilestones.classList.contains('is-hidden');
+      const hidden =
+        !dynasty || !m || milestonesHidden || this.activePolity || this.activePerson || this.challenge;
+      if (hidden) {
+        pane.classList.remove('has-mobile-peek');
+        pillsEl.innerHTML = '';
+        textEl.textContent = '';
+        this._updateMobileChronicleBtn(this.dynasties[this.dynastyIdx]);
+        return;
       }
-      this.milestoneBalloon.classList.remove('is-hidden', 'is-offscreen');
-      if (this.locale === 'zh-tw') this._applyZhHantDom(this.milestoneBalloon);
-      this._measureMilestoneBalloonSize(estW, estH);
-      const vf = this._id('viewport-frame');
-      if (vf) vf.classList.add('has-open-milestone-balloon');
-      this._positionMilestoneBalloon();
+      const anchors = (prebuilt && prebuilt.anchors) || this._getMilestoneAnchors(dynasty, m);
+      const pillsData = (prebuilt && prebuilt.pillsData) || this._buildMilestonePillsData(dynasty, m, anchors);
+      const headlineText = (prebuilt && prebuilt.headlineText) || this.milestoneHeadline(dynasty, m);
+      pillsEl.innerHTML = `${pillsData.pillsInner}${pillsData.relicHtml}${pillsData.storyHtml}`;
+      this._bindMilestonePills(pillsEl, dynasty, m, anchors, pillsData.relicStopIdx, pillsData.storyHit);
+      textEl.textContent = headlineText;
+      if (typeof textEl.setAttribute === 'function') {
+        const tip = this.locale === 'en' ? 'Expand chronicle list' : '展开本朝大事记';
+        textEl.setAttribute('aria-label', `${headlineText} · ${tip}`);
+      }
+      if (this.locale === 'zh-tw') {
+        this._applyZhHantDom(pillsEl);
+        this._applyZhHantDom(textEl);
+      }
+      pane.classList.add('has-mobile-peek');
+      this._updateMobileChronicleBtn(dynasty);
     }
 
     // Box of the event city's name, in the same coordinates as the balloon. The event
@@ -4857,6 +4930,7 @@
       this.grpMilestones
         .querySelectorAll('.milestone-pin.is-active')
         .forEach((n) => n.classList.remove('is-active'));
+      this._syncMobileChroniclePeek(null, null);
     }
 
     _setPolityFocus(targetTitle) {
@@ -5420,6 +5494,7 @@
       this._setPolityFocus(null);
       this._lastLegendKey = null;
       if (this.lastRenderedSnap) this._renderLegendBox(this.lastRenderedSnap);
+      if (cur) this._syncAutoMilestoneBalloon(cur);
     }
 
     _resetPolityPaneChrome() {
@@ -6236,20 +6311,37 @@
             }
             return;
           }
-          if (activeIdx < 0) return;
-          if (activeIdx === 0) {
-            if (pane.scrollTop > 0) {
-              pane.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-            return;
-          }
-          if (items[activeIdx] && pane.scrollHeight > pane.clientHeight) {
-            const el = items[activeIdx];
-            const elTop = el.offsetTop - pane.offsetTop;
-            const targetTop = Math.max(0, elTop - pane.clientHeight * 0.42);
-            pane.scrollTo({ top: targetTop, behavior: 'smooth' });
-          }
+          this._scrollCurrentMilestoneIntoView(pane, activeIdx, 'smooth');
         });
+      }
+    }
+
+    _scrollCurrentMilestoneIntoView(pane, activeIdx, behavior = 'smooth') {
+      const listEl = this._id('milestone-list');
+      if (!pane || !listEl || activeIdx < 0) return;
+      const items = listEl.children;
+      if (!items || !items[activeIdx]) return;
+      if (activeIdx === 0) {
+        if (pane.scrollTop > 0) {
+          if (typeof pane.scrollTo === 'function') {
+            pane.scrollTo({ top: 0, behavior });
+          } else {
+            pane.scrollTop = 0;
+          }
+        }
+        return;
+      }
+      if (pane.scrollHeight <= pane.clientHeight) return;
+      const el = items[activeIdx];
+      const banner = this._id('dynasty-banner-bar');
+      const bannerH = (banner && banner.offsetHeight) || 0;
+      const elTop = el.offsetTop - pane.offsetTop;
+      const headroom = Math.max(bannerH + 10, pane.clientHeight * 0.34);
+      const targetTop = Math.max(0, elTop - headroom);
+      if (typeof pane.scrollTo === 'function') {
+        pane.scrollTo({ top: targetTop, behavior });
+      } else {
+        pane.scrollTop = targetTop;
       }
     }
 
@@ -6815,7 +6907,11 @@
       if (!(opts && opts.skipRefreshLabels)) {
         this._refreshBandLabels();
       }
+      let lastResizeWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
       window.addEventListener('resize', () => {
+        const vw = typeof window !== 'undefined' ? window.innerWidth : 0;
+        if (Math.abs(vw - lastResizeWidth) <= 2) return;
+        lastResizeWidth = vw;
         this._scrubberRailWidth = 0;
         if (this._scrubberView) this._setScrubberView(this._scrubberView.start, this._scrubberView.end);
         this._fitBandLabels();
@@ -7003,11 +7099,14 @@
         if (typeof document !== 'undefined' && document.activeElement === searchInp) {
           searchInp.blur();
         }
+        searchInp.placeholder = this._searchPlaceholder(false);
       }
       const listEl = this._id('map-search-results');
       if (listEl) listEl.classList.add('is-hidden');
       const boxEl = this._id('map-search-box');
       if (boxEl) boxEl.classList.remove('is-expanded');
+      if (this._syncMobileSearchUi) this._syncMobileSearchUi(false);
+      if (this._syncSearchClearBtn) this._syncSearchClearBtn();
     }
 
     jumpToYear(targetYear) {
@@ -8030,6 +8129,7 @@
         force !== undefined ? force : !this.mobileChronicleOpen;
       // The sheet is a grid row, so toggling it resizes the map over a 0.22s transition.
       if (wasOpen !== this.mobileChronicleOpen) this._mobileSheetToggledAt = Date.now();
+      const cur = this.dynasties[this.dynastyIdx];
       if (this.mobileChronicleOpen) {
         if (this.paneCollapsed) {
           this.paneCollapsed = false;
@@ -8043,18 +8143,31 @@
         }
       }
       const pane = this._id('chronicle-pane');
-      if (pane) {
+      const activeIdx = cur && !this.activePolity ? this._activeMilestoneIndex(cur) : -1;
+      if (pane && (!this.mobileChronicleOpen || activeIdx <= 0)) {
         pane.scrollTop = 0;
       }
       const body = this._id('workspace-body');
       if (body) {
         body.classList.toggle('is-mobile-chronicle-open', this.mobileChronicleOpen);
       }
-      this._updateMobileChronicleBtn(this.dynasties[this.dynastyIdx]);
+      if (this.mobileChronicleOpen && cur) {
+        if (typeof this._highlightCurrentMilestone === 'function') {
+          this._highlightCurrentMilestone(cur);
+        }
+        if (pane && activeIdx > 0) {
+          this._scrollCurrentMilestoneIntoView(pane, activeIdx, 'instant');
+        }
+      } else if (!this.mobileChronicleOpen && cur && typeof this._syncAutoMilestoneBalloon === 'function') {
+        this._syncAutoMilestoneBalloon(cur);
+      }
+      this._updateMobileChronicleBtn(cur);
       this._syncTogglePaneButton();
       setTimeout(() => {
         if (pane && !this.mobileChronicleOpen) {
           pane.scrollTop = 0;
+        } else if (pane && this.mobileChronicleOpen && activeIdx > 0) {
+          this._scrollCurrentMilestoneIntoView(pane, activeIdx, 'instant');
         }
         this._updateScaleBar();
         if (this.activeMilestone) this._positionMilestoneBalloon();
@@ -8068,12 +8181,21 @@
       const count = (cur && cur.milestones && cur.milestones.length) || 0;
       btn.setAttribute('aria-expanded', this.mobileChronicleOpen ? 'true' : 'false');
       if (this.mobileChronicleOpen) {
-        btn.textContent = this.locale === 'en' ? 'Collapse ▾' : '收起史志 ▾';
+        btn.textContent = this.locale === 'en' ? 'Collapse ▾' : this._zh('收起史志 ▾');
       } else {
-        btn.textContent =
-          this.locale === 'en'
-            ? `Chronicle (${count}) ▲`
-            : `史志 · 事件 (${count}) ▲`;
+        const pane = this._id('chronicle-pane');
+        const hasPeek = Boolean(
+          pane && pane.classList && pane.classList.contains('has-mobile-peek') && this._isMobileViewport()
+        );
+        if (hasPeek) {
+          btn.textContent =
+            this.locale === 'en' ? `Events · ${count} ▲` : this._zh(`史志 · ${count} ▲`);
+        } else {
+          btn.textContent =
+            this.locale === 'en'
+              ? `Chronicle (${count}) ▲`
+              : this._zh(`史志 · 事件 (${count}) ▲`);
+        }
       }
     }
 
@@ -9578,6 +9700,92 @@
 
     // Global Quick Search methods are attached by js/atlas_search.js.
 
+    _syncSearchClearBtn() {
+      const clearBtn = this._id('act-clear-search');
+      const searchInp = this._id('inp-map-search');
+      const searchBox = this._id('map-search-box');
+      if (!clearBtn || !searchInp) return;
+      const hasVal = Boolean(searchInp.value && searchInp.value.trim());
+      const isOpen =
+        hasVal ||
+        (searchBox && searchBox.classList.contains('is-expanded')) ||
+        (typeof document !== 'undefined' && document.activeElement === searchInp);
+      clearBtn.classList.toggle('is-hidden', !isOpen);
+      const lbl = hasVal
+        ? this.locale === 'en'
+          ? 'Clear search'
+          : this._zh('清空搜索')
+        : this.locale === 'en'
+          ? 'Close search'
+          : this._zh('关闭搜索');
+      clearBtn.title = lbl;
+      clearBtn.setAttribute('aria-label', lbl);
+    }
+
+    _syncMobileSearchUi(open) {
+      const shell = this._id('atlas-shell');
+      const searchBox = this._id('map-search-box');
+      if (!shell) return;
+      const isNarrow =
+        typeof window !== 'undefined' && window.innerWidth > 0 && window.innerWidth <= 640;
+      const active = Boolean(open && isNarrow);
+      shell.classList.toggle('is-mobile-search-open', active);
+      if (searchBox && searchBox.style) {
+        if (active && typeof window !== 'undefined' && window.visualViewport) {
+          const maxH = Math.max(160, Math.floor(window.visualViewport.height - 102));
+          searchBox.style.setProperty('--mobile-search-list-max-h', `${maxH}px`);
+        } else {
+          searchBox.style.removeProperty('--mobile-search-list-max-h');
+        }
+      }
+    }
+
+    _closeQuickSearch() {
+      const searchInp = this._id('inp-map-search');
+      const searchList = this._id('map-search-results');
+      const searchBox = this._id('map-search-box');
+      const wasOpen = Boolean(
+        (searchBox && searchBox.classList.contains('is-expanded')) ||
+          (searchInp && typeof document !== 'undefined' && document.activeElement === searchInp)
+      );
+      if (searchList) searchList.classList.add('is-hidden');
+      if (searchBox) searchBox.classList.remove('is-expanded');
+      if (searchInp) {
+        searchInp.placeholder = this._searchPlaceholder(false);
+        if (typeof document !== 'undefined' && document.activeElement === searchInp) {
+          searchInp.blur();
+        }
+      }
+      this._syncMobileSearchUi(false);
+      this._syncSearchClearBtn();
+      return wasOpen;
+    }
+
+    _scheduleSearchWarmup() {
+      if (this._searchWarmupScheduled) return;
+      this._searchWarmupScheduled = true;
+      const runWarmup = () => {
+        if (!this._fullSnapshotsLoaded) this._ensureFullSnapshots();
+        if (!this._isLoreDetailLoaded()) this._ensureLoreDetail();
+        if (this.locale === 'zh-tw' && !this._hasZhHant()) this._ensureZhHant();
+        const schedIdx = () => {
+          if (!this.searchIndex && typeof this._ensureSearchIndex === 'function') {
+            this._ensureSearchIndex();
+          }
+        };
+        if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+          window.requestIdleCallback(schedIdx, { timeout: 500 });
+        } else {
+          setTimeout(schedIdx, 220);
+        }
+      };
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(runWarmup, { timeout: 220 });
+      } else {
+        setTimeout(runWarmup, 120);
+      }
+    }
+
     _closeLayersPopover() {
       const layersPopover = this._id('layers-popover');
       const layersBtn = this._id('act-layers-menu');
@@ -9629,6 +9837,7 @@
       if (this._closeLocalePopover && this._closeLocalePopover()) return true;
       if (this._closeMorePopover && this._closeMorePopover()) return true;
       if (this._closeLayersPopover()) return true;
+      if (this._closeQuickSearch && this._closeQuickSearch()) return true;
       if (this.playing || this.personTimer) {
         this.stopAutoplay();
         return true;
@@ -9680,10 +9889,13 @@
       let activeSearchIdx = -1;
       let currentResults = [];
       let showcaseIdx = 0;
+      let isComposingSearch = false;
+      let searchInputTimer = null;
 
       const renderSearchDropdown = () => {
         if (!searchInp || !searchList) return;
         const q = searchInp.value.trim();
+        this._syncSearchClearBtn();
         const kindLabel = {
           multi_person: this.locale === 'en' ? 'Intersect' : '交汇',
           person: this.locale === 'en' ? 'Figure' : '人物',
@@ -9700,7 +9912,6 @@
           event: this.locale === 'en' ? 'Event' : '史事',
         };
         if (!q) {
-          this._ensureSearchIndex();
           const showcasePool = this._getSearchShowcasePool();
           const sampleItem = showcasePool.length
             ? showcasePool[showcaseIdx % showcasePool.length]
@@ -9791,18 +10002,16 @@
           searchList.appendChild(guideLi);
           searchList.classList.remove('is-hidden');
           if (this.locale === 'zh-tw') this._applyZhHantDom(searchList);
-          if (!this._isLoreDetailLoaded()) {
-            this._ensureLoreDetail();
-          }
-          if (!this._hasZhHant()) {
-            this._ensureZhHant();
-          }
+          this._scheduleSearchWarmup();
           return;
         }
         const pinyinQuery = this._eventPinyinQuery(q);
         currentResults = this._queryQuickSearch(q);
         const pendingSearchData = [];
-        if (/[a-z]/i.test(q) && !this._hasEnDict()) {
+        if (
+          !this._hasEnDict() &&
+          (this.locale === 'en' || (!isComposingSearch && /[a-z]{2,}/i.test(q)))
+        ) {
           pendingSearchData.push(this._ensureEnglishLocale());
         }
         if (!this._isLoreDetailLoaded()) pendingSearchData.push(this._ensureLoreDetail());
@@ -9870,21 +10079,76 @@
 
       if (searchInp && searchList) {
         const searchBox = this._id('map-search-box');
+        const clearSearchBtn = this._id('act-clear-search');
+        const closeTopPopovers = () => {
+          this._closeLayersPopover();
+          this._closeMorePopover();
+          this._closeLocalePopover();
+        };
         if (searchBox) {
-          searchBox.addEventListener('click', () => {
+          searchBox.addEventListener('click', (e) => {
+            if (clearSearchBtn && e.target === clearSearchBtn) return;
             if (window.innerWidth <= 640 && !searchBox.classList.contains('is-expanded')) {
+              closeTopPopovers();
               searchBox.classList.add('is-expanded');
-              setTimeout(() => searchInp.focus(), 20);
+              searchInp.placeholder = this._searchPlaceholder(true);
+              this._syncMobileSearchUi(true);
+              this._syncSearchClearBtn();
+              if (e.target !== searchInp) searchInp.focus();
             }
           });
         }
-        searchInp.addEventListener('input', renderSearchDropdown);
+        if (clearSearchBtn) {
+          clearSearchBtn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          });
+          clearSearchBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            clearTimeout(searchInputTimer);
+            if (searchInp.value.trim()) {
+              searchInp.value = '';
+              renderSearchDropdown();
+              if (!this._isMobileViewport()) searchInp.focus();
+            } else {
+              this._closeQuickSearch();
+            }
+          });
+        }
+        searchList.addEventListener(
+          'touchmove',
+          () => {
+            if (document.activeElement === searchInp) searchInp.blur();
+          },
+          { passive: true }
+        );
+        searchInp.addEventListener('compositionstart', () => {
+          isComposingSearch = true;
+        });
+        searchInp.addEventListener('compositionend', () => {
+          isComposingSearch = false;
+          clearTimeout(searchInputTimer);
+          renderSearchDropdown();
+        });
+        searchInp.addEventListener('input', (e) => {
+          this._syncSearchClearBtn();
+          if (isComposingSearch || (e && e.isComposing)) return;
+          clearTimeout(searchInputTimer);
+          if (!searchInp.value.trim()) {
+            renderSearchDropdown();
+            return;
+          }
+          searchInputTimer = setTimeout(renderSearchDropdown, 75);
+        });
         searchInp.addEventListener('focus', () => {
+          closeTopPopovers();
+          if (searchBox) searchBox.classList.add('is-expanded');
           searchInp.placeholder = this._searchPlaceholder(true);
+          this._syncMobileSearchUi(true);
           renderSearchDropdown();
         });
         searchInp.addEventListener('blur', () => {
-          searchInp.placeholder = this._searchPlaceholder(false);
           setTimeout(() => {
             if (
               searchBox &&
@@ -9892,6 +10156,9 @@
               searchList.classList.contains('is-hidden')
             ) {
               searchBox.classList.remove('is-expanded');
+              searchInp.placeholder = this._searchPlaceholder(false);
+              this._syncMobileSearchUi(false);
+              this._syncSearchClearBtn();
             }
           }, 180);
         });
@@ -9918,16 +10185,13 @@
               searchInp.blur();
             }
           } else if (e.key === 'Escape') {
-            searchList.classList.add('is-hidden');
-            if (searchBox) searchBox.classList.remove('is-expanded');
-            searchInp.blur();
+            this._closeQuickSearch();
           }
         });
         document.addEventListener('pointerdown', (e) => {
           const box = this._id('map-search-box');
           if (box && !box.contains(e.target)) {
-            searchList.classList.add('is-hidden');
-            box.classList.remove('is-expanded');
+            this._closeQuickSearch();
           }
         });
       }
@@ -9939,8 +10203,7 @@
           this._closeLayersPopover();
           this._closeMorePopover();
           this._closeLocalePopover();
-          const sl = this._id('map-search-results');
-          if (sl) sl.classList.add('is-hidden');
+          this._closeQuickSearch();
           if (this.challenge) {
             this.stopChallenge();
           } else {
@@ -9959,6 +10222,7 @@
           e.stopPropagation();
           this._closeMorePopover();
           this._closeLocalePopover();
+          this._closeQuickSearch();
           const willOpen = layersPopover.classList.contains('is-hidden');
           if (willOpen) {
             if (window.innerWidth > 640) {
@@ -9999,6 +10263,7 @@
           e.stopPropagation();
           this._closeLayersPopover();
           this._closeMorePopover();
+          this._closeQuickSearch();
           const willOpen = localePopover.classList.contains('is-hidden');
           if (willOpen) {
             const navEl = this._id('nav-bar');
@@ -10050,6 +10315,7 @@
           e.stopPropagation();
           this._closeLayersPopover();
           this._closeLocalePopover();
+          this._closeQuickSearch();
           const willOpen = morePopover.classList.contains('is-hidden');
           if (willOpen) {
             morePopover.classList.remove('is-hidden');
@@ -10205,6 +10471,21 @@
           }
         });
       }
+      const mobPeekText = this._id('mobile-peek-text');
+      if (mobPeekText) {
+        mobPeekText.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (this._isMobileViewport() && !this.mobileChronicleOpen) {
+            this.toggleMobileChronicle(true);
+          }
+        });
+        mobPeekText.addEventListener('keydown', (e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && this._isMobileViewport() && !this.mobileChronicleOpen) {
+            e.preventDefault();
+            this.toggleMobileChronicle(true);
+          }
+        });
+      }
       const expandGenBtn = this._id('act-expand-genealogy');
       if (expandGenBtn) {
         expandGenBtn.addEventListener('click', () => {
@@ -10232,6 +10513,13 @@
           this.presentChallengeRound();
         }
       });
+      const quizMobileCta = this._id('act-quiz-mobile-cta');
+      if (quizMobileCta) {
+        quizMobileCta.addEventListener('click', () => {
+          const nextBtn = this._id('act-next-round');
+          if (nextBtn) nextBtn.click();
+        });
+      }
 
       const musicBtn = this._id('act-music');
       if (musicBtn) {
@@ -10924,7 +11212,8 @@
           const [sx, sy] = this._clientToSvgPoint(e.clientX, e.clientY);
           const pend = this.challenge.pendingGuess;
           const svgPerPx = this.camera.w / Math.max(1, this.svg.getBoundingClientRect().width);
-          if (pend && Math.hypot(sx - pend[0], sy - pend[1]) <= 14 * svgPerPx) {
+          const confirmHitPx = e.pointerType === 'touch' ? 20 : 14;
+          if (pend && Math.hypot(sx - pend[0], sy - pend[1]) <= confirmHitPx * svgPerPx) {
             // Clicking the pending mark again confirms it.
             this._evaluateLocateClick(pend[0], pend[1]);
           } else {
@@ -11129,15 +11418,36 @@
       });
 
       window.addEventListener('resize', () => {
-        this._cameraViewportRect = null;
         const vw = window.innerWidth;
-        if (this._lastViewportWidth === undefined || Math.abs(vw - this._lastViewportWidth) > 8) {
-          this._rescaleSvgTypography();
-          this._syncTogglePaneButton();
+        const widthChanged =
+          this._lastViewportWidth === undefined || Math.abs(vw - this._lastViewportWidth) > 2;
+        if (widthChanged) {
+          this._cameraViewportRect = null;
+          if (this._lastViewportWidth === undefined || Math.abs(vw - this._lastViewportWidth) > 8) {
+            this._rescaleSvgTypography();
+            this._syncTogglePaneButton();
+          }
         }
+        const srInp = this._id('inp-map-search');
+        const srBox = this._id('map-search-box');
+        const srExp = Boolean(
+          (srInp && typeof document !== 'undefined' && document.activeElement === srInp) ||
+            (srBox && srBox.classList.contains('is-expanded'))
+        );
+        if (srInp) srInp.placeholder = this._searchPlaceholder(srExp);
+        if (this._syncMobileSearchUi) this._syncMobileSearchUi(srExp);
+        const shell = this._id('atlas-shell');
+        if (!widthChanged && shell && shell.classList.contains('is-mobile-search-open')) return;
         this._updateScaleBar();
         this._syncResetCameraUi();
       });
+      if (typeof window !== 'undefined' && window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+          const shell = this._id('atlas-shell');
+          if (!shell || !shell.classList.contains('is-mobile-search-open')) return;
+          this._syncMobileSearchUi(true);
+        });
+      }
       // The chronicle pane can resize the map without a window resize.
       if (typeof ResizeObserver !== 'undefined') {
         this._cameraResizeObserver = new ResizeObserver(() => {

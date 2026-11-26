@@ -87,7 +87,7 @@ window.EN_LOCALE = {
       "name": "Eastern Han",
       "short": "E. Han",
       "capital": "Luoyang",
-      "desc": "Restored by Emperor Guangwu with Luoyang as capital. Ban Chao secured the Tarim Basin, Dou Xian routed the Northern Xiongnu, and Cai Lun refined papermaking. Factional struggles and the Yellow Turban Rebellion ushered in an age of warlords."
+      "desc": "Restored by Emperor Guangwu with Luoyang as capital, Eastern Han reached its zenith from the Ming–Zhang era through the Yongyuan peak. Ban Chao secured the Tarim Basin, Dou Xian routed the Northern Xiongnu, and Cai Lun refined papermaking. Factional struggles and the Yellow Turban Rebellion ushered in an age of warlords."
     },
     "sanguo": {
       "name": "Three Kingdoms",
@@ -135,7 +135,7 @@ window.EN_LOCALE = {
       "name": "Northern Song",
       "short": "N. Song",
       "capital": "Dongjing (Kaifeng)",
-      "desc": "After the Chenqiao mutiny (960), Song reunified the southern kingdoms and Northern Han within two decades, but failed to recover the Sixteen Prefectures from Liao, coexisting with Khitan Liao, Tangut Western Xia, and Dali amid an economic and cultural boom."
+      "desc": "After the Chenqiao mutiny (960), Song reunified the southern kingdoms and Northern Han within two decades, but failed to recover the Sixteen Prefectures from Liao, coexisting with Khitan Liao, Tangut Western Xia, and Dali. From Emperor Renzong's flourishing reign through Wang Anshi's reforms, economy and culture thrived."
     },
     "nansong": {
       "name": "Southern Song",
@@ -147,13 +147,13 @@ window.EN_LOCALE = {
       "name": "Yuan",
       "short": "Yuan",
       "capital": "Dadu (Beijing)",
-      "desc": "Proclaimed by Kublai Khan in 1271 and completing reunification at Yashan in 1279, the Yuan dynasty brought Tibet (under the Bureau of Buddhist and Tibetan Affairs), Yunnan, the Mongolian steppe, and Manchuria under a single central government, established the Branch Secretariat provincial system and the Penghu Inspection Office, and made Dadu a crossroads of Eurasia."
+      "desc": "Proclaimed by Kublai Khan in 1271 and completing reunification at Yashan in 1279, Yuan consolidated rule through the Zhiyuan and Dade eras. It brought Tibet (under the Bureau of Buddhist and Tibetan Affairs), Yunnan, the Mongolian steppe, and Manchuria under one central government, established the Branch Secretariat system and Penghu Inspection Office, and made Dadu a crossroads of Eurasia."
     },
     "ming": {
       "name": "Ming",
       "short": "Ming",
       "capital": "Shuntian (Beijing)",
-      "desc": "Early Ming established the Nurgan Commandery, Hami Guard, and Jiaozhi Province and sent Zheng He on seven Indian Ocean voyages. After the Tumu Crisis (1449) Ming pulled back to the Great Wall; in 1616 Later Jin rose in Manchuria."
+      "desc": "From the Hongwu, Yongle, and Ren–Xuan eras through the Hongzhi revival, early Ming established the Nurgan Commandery, Hami Guard, and Jiaozhi Province and sent Zheng He on seven Indian Ocean voyages. After the Tumu Crisis (1449) Ming pulled back to the Great Wall; in 1616 Later Jin rose in Manchuria."
     },
     "qing": {
       "name": "Qing",
@@ -1543,6 +1543,10 @@ window.EN_LOCALE = {
       "King Weilie of Zhou recognizes Wei, Zhao, and Han as feudal lords (Partition of Jin)",
       "Luoyang · Jinyang"
     ],
+    "zhanguo:-400": [
+      "Marquis Wen of Wei backs Li Kui's reforms and Wu Qi in Xihe, making Wei first hegemon",
+      "Anyi"
+    ],
     "zhanguo:-386": [
       "Tian He recognized as Marquis of Qi (Tian Usurpation), forming the Seven Warring States",
       "Linzi"
@@ -2581,6 +2585,7 @@ window.EN_LOCALE = {
     "哈巴罗夫斯克": "Khabarovsk",
     "俄罗斯·哈巴罗夫斯克（伯力）": "Khabarovsk (Boli), Russia",
     "匈奴": "Xiongnu",
+    "东胡": "Donghu",
     "南匈奴": "Southern Xiongnu",
     "月氏": "Yuezhi",
     "丁零诸部": "Dingling Tribes",
@@ -4791,7 +4796,8 @@ window.EN_LOCALE = {
     "前 228 — 前 227 · 秦王扫六合之攻克邯郸灭赵：王翦破赵俘赵王迁，公子嘉北奔代郡": "228–227 BCE · Unification Wars — Fall of Zhao: Wang Jian Captures Handan; Prince Jia Flees to Dai",
     "前 226 · 秦王扫六合之易水破燕：荆轲刺秦后王翦攻拔燕都蓟城，燕王喜东退辽东": "226 BCE · Unification Wars — Capture of Jicheng: Wang Jian Takes the Yan Capital; King Xi Retreats to Liaodong",
     "前 225 — 前 224 · 秦王扫六合之水灌大梁灭魏：王贲引河沟灌城，魏王假出降，三晋尽入秦": "225–224 BCE · Unification Wars — Fall of Wei: Wang Ben Floods Daliang and Receives King Jia’s Surrender",
-    "前 223 — 前 222 · 秦王扫六合之王翦六十万灭楚、王贲灭燕代：六国唯余齐国孤悬东海": "223–222 BCE · Unification Wars — Fall of Chu, Yan & Dai: Wang Jian Conquers Chu and Wang Ben Takes Liaodong; Only Qi Remains",
+    "前 223 · 秦王扫六合之王翦六十万灭楚：破寿春俘楚王负刍，楚亡，燕代齐尚存": "223 BCE · Unification Wars — Fall of Chu: Wang Jian Captures Shouchun and King Fuchu; Yan, Dai & Qi Still Stand",
+    "前 222 · 秦王扫六合之王贲灭燕与代：平辽东、灭代郡、定江南，六国唯余齐国孤悬东海": "222 BCE · Unification Wars — Fall of Yan & Dai: Wang Ben Takes Liaodong & Dai; Only Qi Remains",
     "战国后期（前260年 · 白起拔郢与长平之战）": "Late Warring States (260 BCE · Capture of Ying & Battle of Changping)",
     "前284年乐毅率五国联军破齐；前278年秦将白起拔楚都郢置南郡，楚东迁陈郢；前260年秦赵长平决战，白起坑赵卒四十万，山东六国再难独力抗秦。": "In 284 BCE Yue Yi led a five-state coalition to rout Qi; in 278 BCE Bai Qi captured the Chu capital Ying, forcing Chu east to Chen; in 260 BCE Bai Qi destroyed 400,000 Zhao troops at Changping, leaving no eastern state able to match Qin alone.",
     "秦王政亲政前夕（前242年 · 灭周置三川、东郡与六国合纵终结）": "Eve of Unification (242 BCE · Qin Establishes Dongjun and Severs the Alliance)",
@@ -4805,13 +4811,18 @@ window.EN_LOCALE = {
     "前227年荆轲刺秦不果，王翦、辛胜大破燕代联军于易水之西，前226年十月攻拔燕都蓟城，燕王喜斩太子丹首级献秦，退保辽东襄平。": "Following Jing Ke’s failed assassination attempt (227 BCE), Wang Jian routed the Yan-Dai army west of the Yi River and captured Jicheng in 226 BCE, forcing King Xi of Yan to retreat to Liaodong.",
     "秦王扫六合 · 水灌大梁灭魏（前225年 · 三晋尽入于秦）": "Qin Unification · Flooding of Daliang & Conquest of Wei (225 BCE)",
     "前225年（秦王政二十二年），王贲引黄河、鸿沟之水灌魏都大梁，三月城坏，魏王假出降，魏国灭亡，三晋故地尽归于秦。": "In 225 BCE Wang Ben diverted the Yellow River and Honggou Canal to flood Daliang for three months; King Jia surrendered, completing Qin’s conquest of the Three Jins.",
-    "秦王扫六合 · 灭楚平燕代，唯余齐国（前223—前222年）": "Qin Unification · Conquest of Chu, Yan & Dai; Only Qi Remains (223–222 BCE)",
-    "前223年王翦、蒙武统六十万大军破楚拔寿春，俘楚王负刍；前222年王贲攻灭辽东燕王喜与代王嘉，王翦悉定江南置会稽郡，六国唯余东海之滨的齐国孤悬。": "In 223 BCE Wang Jian and Meng Wu conquered Chu at Shouchun; in 222 BCE Wang Ben extinguished Yan in Liaodong and Dai while Wang Jian pacified Jiangnan, leaving Qi isolated on the eastern coast.",
+    "秦王扫六合 · 王翦灭楚（前223年 · 燕代尚存）": "Qin Unification · Fall of Chu (223 BCE · Yan & Dai Still Stand)",
+    "前224—前223年王翦、蒙武统六十万大军破楚拔寿春，俘楚王负刍，击破项燕与昌平君，楚亡；此时辽东燕王喜、代王嘉与齐国尚存。": "In 224–223 BCE Wang Jian and Meng Wu led 600,000 troops to capture Shouchun and King Fuchu, defeating Xiang Yan and Lord Changping to end Chu while King Xi of Yan in Liaodong, King Jia of Dai, and Qi still stood.",
+    "秦王扫六合 · 灭燕与代，唯余齐国（前222年）": "Qin Unification · Conquest of Yan & Dai; Only Qi Remains (222 BCE)",
+    "前222年（秦王政二十五年），王贲攻辽东俘燕王喜、旋灭代王嘉，王翦悉定江南置会稽郡，六国唯余东海之滨的齐国孤悬。": "In 222 BCE Wang Ben captured King Xi of Yan in Liaodong and extinguished Dai, while Wang Jian pacified Jiangnan and established Kuaiji Commandery, leaving Qi isolated on the eastern coast.",
     "洛阳（王城）": "Luoyang (Royal Zhou)",
     "新郑": "Xinzheng",
     "郢都": "Ying",
     "蓟城": "Jicheng",
     "雍城": "Yongcheng",
+    "栎阳": "Yueyang",
+    "西安·阎良": "Xi'an · Yanliang",
+    "秦献公二年（前383年）自雍迁此，商鞅变法启幕之地，前350年迁咸阳": "Qin capital moved here from Yong by Duke Xian in 383 BCE; site of Shang Yang’s reforms until the move to Xianyang in 350 BCE",
     "安邑": "Anyi",
     "阳翟": "Yangzhai",
     "陈郢": "Chen",

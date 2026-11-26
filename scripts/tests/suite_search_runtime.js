@@ -1113,8 +1113,23 @@ async function runSearchRuntimeSuite(ctx) {
             qCtrl.locale = loc;
             qCtrl.startChallenge({ preferCurrentDynasty: true });
             assert(qCtrl.challenge && qCtrl.challenge.deck.length === 5, `Quiz deck failed for ${loc}`);
+            assert.strictEqual(
+              getQuizEl('challenge-mobile-dock').classList.contains('is-hidden'),
+              false,
+              `Mobile dock must show on startChallenge (${loc})`
+            );
+            assert.strictEqual(
+              getQuizEl('act-quiz-mobile-cta').classList.contains('is-hidden'),
+              true,
+              `Mobile CTA must stay hidden before dropping a pin (${loc})`
+            );
             qCtrl._previewLocatePin(500, 350);
             assert(Array.isArray(qCtrl.challenge.pendingGuess), `pendingGuess not set for ${loc}`);
+            assert.strictEqual(
+              getQuizEl('act-quiz-mobile-cta').classList.contains('is-hidden'),
+              false,
+              `Mobile CTA must show after dropping a pin (${loc})`
+            );
             assert.strictEqual(qCtrl._quizChipAt(50, 20), true, `_quizChipAt hit failed for ${loc}`);
             assert.strictEqual(qCtrl._quizChipAt(500, 500), false, `_quizChipAt miss failed for ${loc}`);
             const [tx, ty] = qCtrl.projector.toScreen(...qCtrl.challenge.deck[0].settlement.coord);
@@ -1122,8 +1137,18 @@ async function runSearchRuntimeSuite(ctx) {
             assert.strictEqual(qCtrl.challenge.answered, true);
             assert.strictEqual(qCtrl.challenge.lastPts, 20);
             assert.strictEqual(qCtrl.challenge.history.length, 1, `Expected quiz history for ${loc}`);
+            assert.strictEqual(
+              getQuizEl('act-quiz-mobile-cta').classList.contains('is-hidden'),
+              false,
+              `Mobile CTA must show Next Question after reveal (${loc})`
+            );
             qCtrl._finishChallenge();
             assert.strictEqual(qCtrl.challenge.finished, true);
+            assert.strictEqual(
+              getQuizEl('challenge-mobile-dock').classList.contains('is-hidden'),
+              true,
+              `Mobile dock must hide on quiz finish (${loc})`
+            );
             assert.strictEqual(
               getQuizEl('act-share-quiz').classList.contains('is-hidden'),
               false,
@@ -1430,7 +1455,13 @@ async function runSearchRuntimeSuite(ctx) {
 
         // CUJ 42: Search Empty-State Solo Preservation + Multi-Person (2–3 Person) Discovery
         ctrl.locale = 'zh';
+        ctrl.searchIndex = null;
         const scPool = ctrl._getSearchShowcasePool();
+        assert.strictEqual(
+          ctrl.searchIndex,
+          null,
+          '_getSearchShowcasePool() must stay lightweight and avoid synchronously building searchIndex'
+        );
         assert(
           scPool.length === 16 && scPool[0].kind === 'person' && scPool[0].personKey === 'sushi',
           `Showcase pool must default to solo Su Shi at index 0 and contain 16 entries, got ${scPool.length}`
@@ -1470,20 +1501,23 @@ async function runSearchRuntimeSuite(ctx) {
           );
         }
         const zhChips = Array.from(ctrl._getSearchSampleQueries());
-        assert.deepStrictEqual(zhChips, ['长安', '赤壁', '霍去病', '李白 杜甫 高适']);
+        assert.deepStrictEqual(zhChips, ['长安', '霍去病', '安史之乱', '李白 杜甫']);
         assert.strictEqual(ctrl._queryQuickSearch('霍去病')[0].kind, 'person');
-        assert.strictEqual(ctrl._queryQuickSearch('李白 杜甫 高适')[0].kind, 'multi_person');
+        assert.strictEqual(ctrl._queryQuickSearch('安史之乱')[0].kind, 'story');
+        assert.strictEqual(ctrl._queryQuickSearch('李白 杜甫')[0].kind, 'multi_person');
         assert(
           ctrl._searchPlaceholder(false).length <= 22 &&
-            ctrl._searchPlaceholder(true).includes('李白 杜甫 高适'),
-          'Chinese compact placeholder must fit 248px pill while expanded placeholder hints 2–3 person syntax'
+            ctrl._searchPlaceholder(false).includes('史事') &&
+            ctrl._searchPlaceholder(true).includes('李白 杜甫'),
+          'Chinese compact placeholder must fit desktop pill, mention 史事, and expanded placeholder must hint dual-person syntax'
         );
 
         ctrl.locale = 'en';
         const enChips = Array.from(ctrl._getSearchSampleQueries());
         // English chips are short enough not to ellipsize next to the "Quiz ›" link.
-        assert.deepStrictEqual(enChips, ["Chang'an", 'Chibi', 'Cao Cao', 'Li Bai, Du Fu']);
-        assert.strictEqual(ctrl._queryQuickSearch('Cao Cao')[0].kind, 'person');
+        assert.deepStrictEqual(enChips, ["Chang'an", 'Huo Qubing', 'An-Shi Rebellion', 'Li Bai, Du Fu']);
+        assert.strictEqual(ctrl._queryQuickSearch('Huo Qubing')[0].kind, 'person');
+        assert.strictEqual(ctrl._queryQuickSearch('An-Shi Rebellion')[0].kind, 'story');
         assert.strictEqual(ctrl._queryQuickSearch('Li Bai, Du Fu')[0].kind, 'multi_person');
         assert(
           ctrl._searchPlaceholder(false).length <= 28,
@@ -1501,6 +1535,27 @@ async function runSearchRuntimeSuite(ctx) {
             !/[\u4e00-\u9fff]/.test(ctrl._searchPlaceholder(true)),
           'English search placeholders must contain zero CJK characters'
         );
+        const prevInnerWidth = sandbox.window.innerWidth;
+        try {
+          sandbox.window.innerWidth = 375;
+          ctrl.locale = 'zh';
+          assert(
+            ctrl._searchPlaceholder(false).length <= 14 &&
+              ctrl._searchPlaceholder(false).includes('史事') &&
+              ctrl._searchPlaceholder(true).length <= 20,
+            `Mobile ZH placeholders must fit 375px pill cleanly: ${ctrl._searchPlaceholder(false)} / ${ctrl._searchPlaceholder(true)}`
+          );
+          ctrl.locale = 'en';
+          assert(
+            ctrl._searchPlaceholder(false).length <= 24 &&
+              ctrl._searchPlaceholder(true).length <= 42 &&
+              !/[\u4e00-\u9fff]/.test(ctrl._searchPlaceholder(false)) &&
+              !/[\u4e00-\u9fff]/.test(ctrl._searchPlaceholder(true)),
+            `Mobile EN placeholders must fit 375px pill cleanly: ${ctrl._searchPlaceholder(false)} / ${ctrl._searchPlaceholder(true)}`
+          );
+        } finally {
+          sandbox.window.innerWidth = prevInnerWidth;
+        }
         ctrl.locale = 'zh';
 
         // CUJ 43: Polity focus — per-regime profile (割据/并立政权) inside the chronicle pane
@@ -1584,6 +1639,26 @@ async function runSearchRuntimeSuite(ctx) {
           `Uncurated warlord must derive its on-map span 189–219 and name keyword, got ${JSON.stringify(ccDesc)}`
         );
         assert(ctrl._polityEvents(ccDesc).length >= 5, 'Uncurated warlord must still surface related events');
+        assert(
+          ctrl._polityEvents(ctrl._resolvePolity('吐蕃', 750)).some((e) => e.year === 822),
+          'Tubo polity events must include the 822 Changqing Treaty'
+        );
+        assert(
+          ctrl._polityEvents(ctrl._resolvePolity('西夏', 1044)).some((e) => e.year === 1044),
+          'Western Xia polity events must include the 1044 Qingli Peace'
+        );
+        assert(
+          ctrl._polityEvents(ctrl._resolvePolity('赵', -260)).some((e) => e.year === -222),
+          'Zhao polity events must include the 222 BCE fall of Dai'
+        );
+        const jinEvents = ctrl._polityEvents(ctrl._resolvePolity('金', 1127));
+        assert(
+          jinEvents.length >= 25 &&
+            !jinEvents.some((e) =>
+              ((e.milestone && e.milestone.headline) || (e.landmark && e.landmark.zh) || '').includes('金石书画')
+            ),
+          'Jurchen Jin polity events must exclude Li Qingzhao epigraphy false positive'
+        );
         const dynByKey = (k) => ctrl.dynasties.find((d) => d.key === k);
         for (const [title, dk, expMain] of [
           ['唐', 'tang', true],
@@ -1855,8 +1930,11 @@ async function runSearchRuntimeSuite(ctx) {
           !appCode.includes('cap-hint-tag') &&
           !cssSrc.includes('.cap-hint-tag') &&
           cssSrc.includes('#inp-map-search,\n  #inp-year {\n    font-size: 16px;') &&
+          cssSrc.includes('overscroll-behavior: contain;') &&
+          cssSrc.includes('#atlas-shell.is-mobile-search-open') &&
+          indexHtml.includes('id="act-clear-search"') &&
           appCode.includes('if (!this._isMobileViewport()) searchInp.focus();'),
-        'css/style.css & js/app.js must use single-row collapsed mobile chronicle bar, omit removed .cap-hint-tag, prevent iOS Safari auto-zoom (#inp-map-search font-size: 16px), and avoid synchronous searchInp.focus() on mobile chip clicks'
+        'css/style.css, index.html & js/app.js must use single-row collapsed mobile chronicle bar, omit removed .cap-hint-tag, prevent iOS Safari auto-zoom (#inp-map-search font-size: 16px), support mobile search containment/clear button, and avoid synchronous searchInp.focus() on mobile chip clicks'
       );
 
       // Legend cleanup: deduplicate redundant stage year spans and omit redundant .key-note prose
@@ -2182,13 +2260,26 @@ async function runSearchRuntimeSuite(ctx) {
           '_updateTerrainTiles must fetch assets/terrain/index.json once zoomed past 0.8 * defaultW'
         );
         const ldJsonPos = indexHtml.indexOf('application/ld+json');
-        assert(
-          indexHtml.indexOf('<script defer src="js/china_geo_data.js?v=') > 0 &&
-            indexHtml.indexOf('<script defer src="js/atlas_api.js?v=') < ldJsonPos &&
-            indexHtml.indexOf('<script defer src="js/atlas_api.js?v=') <
-              indexHtml.indexOf('js/atlas_track.js?v='),
-          'All 8 same-origin boot scripts must be discovered in <head> via <script defer> before JSON-LD and atlas_track.js'
-        );
+        const trackPos = indexHtml.indexOf('js/atlas_track.js?v=');
+        const bootScriptTags = [
+          'js/china_geo_data.js',
+          'js/atlas_boot.js',
+          'js/map_data.js',
+          'js/lore_core.js',
+          'js/app.js',
+          'js/atlas_trace.js',
+          'js/atlas_search.js',
+          'js/atlas_api.js',
+        ];
+        for (const relPath of bootScriptTags) {
+          const m = indexHtml.match(
+            new RegExp(`<script\\b([^>]*?)\\bsrc="${relPath.replace('.', '\\.')}\\?v=[0-9a-f]+"([^>]*)><\\/script>`)
+          );
+          assert(
+            m && /\bdefer\b/i.test(`${m[1]} ${m[2]}`) && m.index > 0 && m.index < ldJsonPos && m.index < trackPos,
+            `Boot script ${relPath} must be discovered in <head> via <script defer> before JSON-LD and atlas_track.js`
+          );
+        }
         // _ensureSearchIndex must reuse precomputed p.evCount instead of sweeping _collectPersonEvents x144
         const savedSearchIdx = ctrl.searchIndex;
         const savedCollect = ctrl._collectPersonEvents;
