@@ -824,7 +824,9 @@ window.ATLAS_LORE_DATA = Object.assign(window.ATLAS_LORE_DATA || {}, {
     {"name":"武川镇","aliases":["武川","北魏六镇","六镇"],"modern":"内蒙古呼和浩特·武川","coord":[111.65,40.68],"zoom":2.3},
     {"name":"怀朔镇","aliases":["怀朔","沃野镇"],"modern":"内蒙古包头·固阳","coord":[109.84,40.66],"zoom":2.3},
     {"name":"赤嵌","aliases":["热兰遮城","安平","东都","东宁","承天府（东宁）","夷洲","流求","瑠求","小琉球","东番"],"asciiAliases":["chikan","tayouan","zeelandia","dongning","tungning","yizhou","liuqiu","xiaoliuqiu","dongfan"],"modern":"台湾台南","coord":[120.21,23],"zoom":2.4},
-    {"name":"桐城","aliases":["桐城县","桐城市"],"asciiAliases":["tongcheng","tongchengshi"],"modern":"安徽桐城","coord":[116.951,31.051],"zoom":2.6}
+    {"name":"桐城","aliases":["桐城县","桐城市"],"asciiAliases":["tongcheng","tongchengshi"],"modern":"安徽桐城","coord":[116.951,31.051],"zoom":2.6},
+    {"name":"皖城","aliases":["皖县","皖国","潜山","梅城"],"asciiAliases":["wancheng","qianshan"],"modern":"安徽安庆潜山","coord":[116.57,30.63],"zoom":2.6},
+    {"name":"铜官山","aliases":["铜官","五松山"],"asciiAliases":["tongguanshan"],"modern":"安徽铜陵","coord":[117.81,30.93],"zoom":2.6}
   ],
   "PERSON_PROFILES": [
     {"key":"mengzi","zh":"孟子","en":"Mencius","courtesyZh":"孟轲 · 亚圣 · 仁政民本","courtesyEn":"Meng Ke, Second Sage of Confucianism","dynastyKey":"zhanguo","span":[-372,-289],"aliases":["孟轲","亚圣","孟子舆"],"evCount":3},
@@ -851,7 +853,7 @@ window.ATLAS_LORE_DATA = Object.assign(window.ATLAS_LORE_DATA || {}, {
     {"key":"banchao","zh":"班超","en":"Ban Chao","courtesyZh":"定远侯 · 字仲升","courtesyEn":"Protector-General of Western Regions","dynastyKey":"donghan","span":[32,102],"aliases":["定远侯","班仲升"],"evCount":5},
     {"key":"caocao","zh":"曹操","en":"Cao Cao","courtesyZh":"魏武帝 · 字孟德","courtesyEn":"King Wu of Wei","dynastyKey":"donghan","span":[155,220],"aliases":["魏武帝","孟德","曹孟德","阿瞒","曹阿瞒","曹公"],"evCount":16},
     {"key":"liubei","zh":"刘备","en":"Liu Bei","courtesyZh":"汉昭烈帝 · 字玄德","courtesyEn":"Emperor Zhaolie of Shu Han","dynastyKey":"sanguo","eraRegimes":["蜀汉"],"span":[161,223],"aliases":["玄德","刘玄德","汉昭烈帝","昭烈帝","先主"],"evCount":13},
-    {"key":"sunquan","zh":"孙权","en":"Sun Quan","courtesyZh":"吴大帝 · 字仲谋","courtesyEn":"Emperor Da of Eastern Wu","dynastyKey":"sanguo","eraRegimes":["孙吴"],"span":[182,252],"aliases":["仲谋","孙仲谋","吴大帝"],"evCount":7},
+    {"key":"sunquan","zh":"孙权","en":"Sun Quan","courtesyZh":"吴大帝 · 字仲谋","courtesyEn":"Emperor Da of Eastern Wu","dynastyKey":"sanguo","eraRegimes":["孙吴"],"span":[182,252],"aliases":["仲谋","孙仲谋","吴大帝"],"evCount":8},
     {"key":"zhugeliang","zh":"诸葛亮","en":"Zhuge Liang","courtesyZh":"武乡侯 · 字孔明 · 卧龙","courtesyEn":"Kongming, Chancellor of Shu","dynastyKey":"sanguo","eraRegimes":["蜀汉"],"span":[181,234],"journeyKey":"zhugeliang","aliases":["孔明","诸葛孔明","卧龙","武侯","诸葛武侯","Kongming"],"evCount":11},
     {"key":"guanyu","zh":"关羽","en":"Guan Yu","courtesyZh":"汉寿亭侯 · 字云长","courtesyEn":"General of Shu Han","dynastyKey":"sanguo","eraRegimes":["蜀汉"],"span":[160,220],"spanUnknown":"birth","aliases":["云长","关云长","关公","美髯公","武圣"],"evCount":7},
     {"key":"zhouyu","zh":"周瑜","en":"Zhou Yu","courtesyZh":"东吴大都督 · 字公瑾","courtesyEn":"Grand Commander of Eastern Wu","dynastyKey":"donghan","span":[175,210],"aliases":["公瑾","周公瑾","周郎"],"evCount":5},
@@ -956,7 +958,7 @@ window.ATLAS_LORE_DATA = Object.assign(window.ATLAS_LORE_DATA || {}, {
     {"key":"sunce","zh":"孙策","en":"Sun Ce","courtesyZh":"江东小霸王 · 字伯符","courtesyEn":"Little Conqueror of Jiangdong","dynastyKey":"donghan","span":[175,200],"aliases":["孙伯符","小霸王"],"evCount":4},
     {"key":"shile","zh":"石勒","en":"Shi Le","courtesyZh":"后赵明帝 · 字世龙","courtesyEn":"Founder of Later Zhao","dynastyKey":"dongjin","span":[274,333],"aliases":["石世龙","后赵明帝"],"evCount":4},
     {"key":"wangmeng","zh":"王猛","en":"Wang Meng","courtesyZh":"字景略 · 前秦丞相","courtesyEn":"Chancellor of Former Qin","dynastyKey":"dongjin","span":[325,375],"aliases":["王景略"],"evCount":3},
-    {"key":"xiaoyan","zh":"萧衍","en":"Emperor Wu of Liang","courtesyZh":"梁武帝 · 字叔达 · 南朝梁开国皇帝","courtesyEn":"Xiao Yan, Founder of Liang","dynastyKey":"nanbei","span":[464,549],"aliases":["梁武帝","萧叔达"],"evCount":4},
+    {"key":"xiaoyan","zh":"萧衍","en":"Emperor Wu of Liang","courtesyZh":"梁武帝 · 字叔达 · 南朝梁开国皇帝","courtesyEn":"Xiao Yan, Founder of Liang","dynastyKey":"nanbei","span":[464,549],"aliases":["梁武帝","萧叔达"],"evCount":5},
     {"key":"gaohuan","zh":"高欢","en":"Gao Huan","courtesyZh":"字贺六浑 · 东魏权臣 · 北齐奠基者","courtesyEn":"Paramount General of Eastern Wei","dynastyKey":"nanbei","eraRegimes":["东魏","北魏"],"span":[496,547],"aliases":["高贺六浑","齐神武帝"],"evCount":6},
     {"key":"yuwentai","zh":"宇文泰","en":"Yuwen Tai","courtesyZh":"字黑獭 · 西魏权臣 · 北周奠基者","courtesyEn":"Paramount General of Western Wei","dynastyKey":"nanbei","eraRegimes":["西魏","北魏"],"span":[507,556],"aliases":["宇文黑獭","周文帝"],"evCount":5},
     {"key":"zhaogou","zh":"宋高宗","en":"Emperor Gaozong of Song","courtesyZh":"赵构 · 南宋开国皇帝","courtesyEn":"Zhao Gou, Founder of Southern Song","dynastyKey":"nansong","span":[1107,1187],"aliases":["赵构","康王赵构","高宗"],"evCount":5},
@@ -1031,7 +1033,7 @@ window.ATLAS_LORE_DATA = Object.assign(window.ATLAS_LORE_DATA || {}, {
     {"key":"wagang_wei","zh":"瓦岗军（魏）","en":"Wagang Army (Wei)","titles":["魏（李密）"],"from":616,"to":618,"matchFrom":614,"seatZh":"洛口仓 → 金墉城（洛阳）","seatEn":"Luokou Granary → Jinyong (Luoyang)","aliases":["瓦岗军","李密魏政权"]},
     {"key":"douxia","zh":"夏（窦建德）","en":"Xia (Dou Jiande)","titles":["夏（窦建德）"],"from":617,"to":621,"matchFrom":614,"seatZh":"乐寿（河间）→ 洺州（邯郸永年）","seatEn":"Leshou → Mingzhou","aliases":["大夏（窦建德）","河北夏"]},
     {"key":"xiaoxian_liang","zh":"梁（萧铣）","en":"Liang (Xiao Xian)","titles":["梁（萧铣）"],"from":617,"to":621,"matchFrom":614,"seatZh":"巴陵（岳阳）→ 江陵","seatEn":"Baling (Yueyang) → Jiangling","aliases":["后梁（萧铣）"]},
-    {"key":"tubo","zh":"吐蕃","en":"Tibetan Empire","titles":["吐蕃"],"from":618,"to":842,"matchTo":879,"seatZh":"逻些（拉萨）","seatEn":"Rasa (Lhasa)","aliases":["Tibet","Tubo"]},
+    {"key":"tubo","zh":"吐蕃","en":"Tibetan Empire","titles":["吐蕃"],"from":618,"to":842,"matchTo":847,"seatZh":"逻些（拉萨）","seatEn":"Rasa (Lhasa)","aliases":["Tibet","Tubo"]},
     {"key":"wangzheng","zh":"郑（王世充）","en":"Zheng (Wang Shichong)","titles":["郑（王世充）"],"from":619,"to":621,"matchFrom":618,"seatZh":"洛阳","seatEn":"Luoyang","aliases":["王郑"]},
     {"key":"anxi_duhufu","zh":"安西都护府","en":"Anxi Protectorate","titles":["安西都护府（西州）","安西都护府","安西都护府（孤悬坚守）"],"from":640,"to":790,"seatZh":"西州（交河城）→ 龟兹（648 起统辖安西四镇）","seatEn":"Xizhou (Jiaohe) → Kucha (Four Garrisons of Anxi)","aliases":["安西大都护府","安西四镇"]},
     {"key":"anbei_duhufu","zh":"安北都护府（燕然）","en":"Anbei (Yanran) Protectorate","titles":["漠北羁縻府州（薛延陀）","燕然（安北）都护府","安北都护府"],"from":647,"to":687,"matchFrom":630,"seatZh":"故单于台（阴山北）→ 回纥本部（鄂尔浑河）→ 同城","seatEn":"Chanyu Terrace → Orkhon Valley → Tongcheng","aliases":["燕然都护府","瀚海都护府"]},
